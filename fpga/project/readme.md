@@ -21,7 +21,7 @@ This project produces the configure *.bit file
  
 ## How to change N_d?
 -----------   
--go to rc_mt_2000_12\hls
+- go to rc_mt_2000_12\hls
 - make changes in  file  rc_mt_2000_12\hls\src\mt_defines.h
 set the N_d. *It should be multile of 3.* 
 - make changes in the file rc_mt_2000_12\hls\run.bat. Specify vivado_bin, which is the path to Vivado HLS 2014.4 folder
