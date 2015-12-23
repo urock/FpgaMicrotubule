@@ -21,7 +21,9 @@ The SDK contains the following parts:
 ## How to start?
 -----------   
 1. the system variable should be set:
-	 export ROSTA_SDK_DIR=[path_to_sdk] 
+	```
+	 export ROSTA_SDK_DIR=[path_to_sdk]
+	```
 2. the driver should be installed 
 ```
 $ cd $ROSTA_SDK_DIR/lin/driver
