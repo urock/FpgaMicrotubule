@@ -29,7 +29,7 @@ set the N_d. *It should be multile of 3.*
 -go to rc_mt_2000_12\rand
 - make changes in the file rc_mt_2000_12\rand\run.bat. Specify vivado_bin, which is the path to Vivado HLS 2014.4 folder
 - create the project and package the ip by running rc_mt_2000_12\rand\run.bat   
--go to rc_mt_2000_12\project
+- go to rc_mt_2000_12\project
 - make changes in the file rc_mt_2000_12\project\create_project.bat. Specify the path to Vivado 2014.4 folder
 - create the project by running rc_mt_2000_12\project\create_project.bat
 - start gui Vivado 2014.4 and open the created project located in  rc_mt_2000_12\project directory
