@@ -1,0 +1,449 @@
+﻿rc_mt_2000_12
+
+	MT Core in pBlock_hls + rand core in user_ip
+	
+	changes for this revision:
+		1. MT HLS input stream interface changed to pointer (ap_ack)
+		2. Rand HLS output stream change to pointer (ap_ack)
+		3. Register Slice is inserted on stream between MT and Rand hls cores
+
+	updated for bew hiearchy from rc_hls_2000_20:
+
+		05.07.2015
+		1. base, user and hls hierarhy
+		2. hls in bd with local axi interconn to insert reg slice
+		3. hls ap_bus interface changed to m_axi
+		4. ap_bus to m_axi coverter removed from base/axy_system
+		5. base (SLR2) and hls (SLR0 + SLR1) pBlocks
+		
+	Hardware Test OK for test with random heat!
+	
+	Don't forget setting rand_hls_ver in create_project.tcl and mt_hls_ver create_bd_hls.tcl
+	
+
+	
+rc_mt_2000_10
+
+	understood that bad timing results from very high fanout pipeline clock enable signal coming from reading from input rand streams
+	
+	from here project splits into two several to deal with this issue
+		rc_mt_2000_11 - removed rand core to verify that problem is gone
+		rc_mt_2000_12 - rand streams replaced by scalar input with ack. vhdl hls wrapper modified to match this 
+		rc_mt_2000_13 - keep rand streams, but use internal hls buffer and dataflow directive (might help but still could be issues)
+		
+	
+
+	removed heat_on_off, added register slice on rand strean on both side of SLR boundaries
+
+	urock massive rand gen. bad timing results. need to flourplan
+
+	﻿added heat on off. Depends on input parameter.
+	N_d=36
+
+	HARDWARE TEST OK rand and without rand
+
+	hls_core 
+
+	TOTAL_STEPS 	= 10000000
+	STEPS_TO_WRITE 	= 1000000
+
+
+
+	http://192.168.0.163/websvn/listing.php?repname=RC47_SDK&path=%2Fbranches%2Fhls_algs%2FMicroTubes%2Fv04%2Fsrc%2F&rev=621&peg=622#a9944deadc76f11f8db91f7ff225109c3
+
+	hls_core 
+
+	N_d=36
+
+	добавлено тепло
+
+	hls_core 
+
+	http://192.168.0.163/websvn/listing.php?repname=RC47_SDK&path=%2Fbranches%2Fhls_algs%2FMicroTubes%2Fv04%2Fsrc%2F&rev=621&peg=622#a9944deadc76f11f8db91f7ff225109c3
+
+﻿rc_mt_2000_9
+
+N_d=36
+hls_core Rev 611 http://192.168.0.163/websvn/listing.php?repname=RC47_SDK&path=%2Fbranches%2Fhls_algs%2FMicroTubes%2Fv04%2Fsrc%2F&rev=611&peg=606#a9944deadc76f11f8db91f7ff225109c3
+
+rc_mt_2000_8
+	Hardware Test ok
+	hls_core Rev 606 http://192.168.0.163/websvn/listing.php?repname=RC47_SDK&path=%2Fbranches%2Fhls_algs%2FMicroTubes%2Fv04%2Fsrc%2F&rev=606&peg=606#a9944deadc76f11f8db91f7ff225109c3
+
+rc_mt_2000_7
+
+	Hardware Test ok (hls core  (root)/branches/hls_algs/MicroTubes/v03c/ - Rev 582
+http://192.168.0.163/websvn/listing.php?repname=RC47_SDK&path=%2Fbranches%2Fhls_algs%2FMicroTubes%2Fv03c%2Fsrc%2F&rev=582&peg=589#a3e278dde9af131e55102ab163b5160be	
+)
+	
+rc_mt_2000_5
+
+	Hardware Test ok
+
+
+rc_hls_2000_20
+	axi_clk формируется не в pipe_clk, а в user_ip
+	
+	axi_clk	<= ip_clk	<= aclk
+	
+	Кое-какие новые constraints
+	set_false_path
+	create_generated_clock -name ip_clk
+	
+	HLS Test OK
+	
+	Timinig Errors = none!!!
+
+
+rc_hls_2000_19_ab
+
+	ip_clk <= /user/clk_wiz/clk_out (200 MHz)
+	resize_pblock [get_pblocks pblock_base] -add {CLOCKREGION_X1Y6:CLOCKREGION_X1Y8}
+
+	rev 513
+
+		A - axi_clk mmcm removed. axi_clk genereated in pipe_clk_mmcm
+		B - hls core (with AXIM hls_bridge) clk = ip_clk 
+		
+			ip_clk <= axi_clk (inside user_ip)
+				
+		
+		HLS Test OK
+		DDR Test OK
+	
+	
+
+rc_hls_2000_19
+	
+	One HLS AXI Port
+	TCL cript for auto HLS project creation 
+	
+	HLS TEst OK!
+
+rc_hls_2000_18
+
+	- Btm DDR Conteroller removed
+	- User IP interface cleanup (removed ports In(Out)Reg1-7
+	- HLS core added as IP from IP Catalog 
+
+
+	HLS and DDR test ok
+
+rc_pcie_hls_ddr_2000_16_2d
+
+	rev 463
+
+	За основу взят проект rc_pcie_hls_ddr_2000_16_2c
+
+	HLS ядро с непосредственной логикой перенесено в user_ip
+	интерфейсеая часть HLS ядра  на уровне axi_wrapper.
+	HLS ядро (и интерфейсная часть, и логическая) работают на частоте axi_clk
+	user_ip работает на частоте axi_clk
+
+
+	ПРОХОДИТ AXI_FULL_TEST
+	ПРОХОДИТ ПРОСТОЙ HLS_ТЕСТ (запись по одному адресу, чтение результата по другому адресу)
+	
+	Urock: добавлены изменения из rc_pcie_ddr_2000_16 revision 446
+
+			set_property IO_BUFFER_TYPE none on ddr pins
+			
+			pBlock constraints on 
+				base 
+				base/app 
+				base/axi_system/axi_system_i/axi_interconnect_0
+				base/axi_system/datamover_i
+				
+			Stream - AXI Bridge 
+				cross clocking fifo for status interface added 
+				fixed transfer_limit issue
+				
+				
+			set_false_path on
+				base/axi_system/d_rst_cnt_reg[*]/C
+				InitDoneTop
+				InitDoneBtm	
+	
+	
+
+rc_pcie_hls_ddr_2000_16_2c
+
+За основу взят проект rc_pcie_base_2000_16
+
+	Добавлено hls ядро в виде rtl файлов на уровень axi_wrapper. Ядро имеет 2 MASTER INTERFACE
+	на AXI шину, которые заводятся в Block Design. Ядро работает на частоте ip_clk. 
+	Управление ядром осуществляется через регистры user_ip. Задача ядра - считать данные по
+	определенному адресу на axi шине, обработать их и записать данные по другому некоторому
+	 адресу на AXI шине. 
+
+
+	ВНИМАНИЕ! НЕ ПРОХОДИТ AXI_FULL_TEST! 
+
+rc_pcie_ddr_2000_16
+
+Vivado 2014.4
+
+rc_pcie_ddr_2000_14
+
+	За основу взят проект rc_pcie_base_2000_10
+	Регистры для управления работой stream_axi_bridge перенесены из user_ip в master_block. Таким образом, адреса регистров изменились.
+	Другая схема clk. axi_system работает на частоте 200 Mhz. Частота в axi_system  заводится извне. Внутри block design для bottom контроллера дополнительный mmcm. 
+	Для top контроллера дополнительный mmcm. 
+	Частота ip_clk 250 MHz	
+	 Изменена иерархия проекта
+                * top
+                ** base
+                *** pcie
+		***axi_system
+                *** cbus
+                ** user 
+	
+	
+
+
+rc_pcie_ddr_2000_12
+	
+	Vivado 2014.2
+	
+	new version pcie_64b_master.vhd ver 7.0 rev 9.
+	added data transfer controller between interfaces (in user_ip.vhd)
+	
+	abus перенесен из user_ip в top
+	
+	добавлен вход для Block Design - mig_rst_n - однократный отложенный ресет.
+	
+	AXI система создается в Block Design
+	проект Vivado создается скриптом create_project.tcl
+	Block Design добавляется в проект автоматически скриптом create_bd.tcl (на основе команды Vivado write_bd_tcl)
+	
+	stream-axi dridge добавлен в axi_system_wrapper
+	
+	
+	DDR Full Test OK
+	
+
+rc_pcie_ddr_2000_11
+
+stream_axi_bridge added
+
+
+rc_pcie_ddr_2000_8
+
+	Master Engine ver 7
+
+rc_pcie_ddr_2000_6
+
+	DDR: 3 clock_generators 
+	PBLOCKS on Top and Btm ddrx
+	
+	400 MHz
+	
+	ip_clk = 100 MHz
+
+
+rc_pcie_base_2000_5
+
+	???????rc_pcie_base_585_11
+	
+
+rc_pcie_base_585_11
+
+
+	Max Read Request Size ?????????MasterControlReg (0x04)
+	
+	ë????Master Engine
+
+
+
+rc_pcie_base_585_10
+	
+	Vivado 2013.3
+	ip_clk = 125 MHz ?????user_diff_clk 100 Mhz
+	Reg_synch.vhd ver 1
+	Master Engine (4.0)
+	
+	Reg Test updated for mike comments
+	
+	Tests:
+	
+	1. http://192.168.0.137/svn/RostaSDK/trunk/rc47/tests/pcie/base/
+		* Reg test OK
+		* Simple DMA test OK
+		* DUAL DMA test OK on small buffers, error on -l 0x80000
+		
+	2. http://192.168.0.137/svn/RostaSDK/trunk/rc47/tests/pcie/ep-ep/
+		* EP mode 2 (2 devices) test OK on small buffers, error on -l 0x80000
+	
+
+rc_pcie_base_585_9
+
+	Vivado 2013.2
+	
+	ip_clk = 125 MHz ?????user_diff_clk 100 Mhz
+	
+	CBUS
+
+	Reg_synch.vhd ver 1
+	
+	Extended zFoxx Reg Test Ok/ pcoe_base_test -mode reg
+
+rc_pcie_base_585_8
+	
+	ip_clk = 125 MHz ?????user_diff_clk 100 Mhz
+	
+	DDR contrtoole test on user_diff_clk
+	
+	
+rc_pcie_base_585_7
+
+	????? ??????????
+	
+	ip_clk = 125 MHz ?????pcie_clk
+	
+	
+	PCIe base TEST (zFoxx) http://192.168.0.137/svn/RostaSDK/trunk/rc47/tests/pcie/base
+		sudo ./rc47_pcie_base_test -b 0 -v all -mode both (dma and reg)
+		
+
+rc_axi_ddr_585_4
+
+	U????2 DDR ?????top ?tm
+	
+	????? ??????, ?
+	
+		1. î??????? ???? ?????? Status ??? Datamover. ??? ????? - ?????. ???? ????????? ??????? ??????? ?? ??????XI, ???????? ?????? ?!
+		
+		2. u????? ?????????hipscope - ?? ???
+		
+		
+	?????????? ???? ???????? ? ??
+		
+		 AXI MEM test http://192.168.0.137/svn/RostaSdkLin/branches/sdk2/rc47/examples/axi_mem
+				OK: rc47_axi_ddr -b 0 -v C0 -mode simple -s 0x20000000 -l 0x1000
+				OK: rc47_axi_ddr -b 0 -v C0 -mode full  -l 0x400000
+
+		 PCIe Reg TEST (zFoxx) http://192.168.0.137/svn/RostaSdkLin/branches/sdk2/rc47/tests/pcie/soft
+					reg_test ok
+					
+					
+					
+
+rc_axi_base_585_1
+
+	1. New master block
+	2. Axi to fifo modified
+
+rc_axi_base_585_0
+
+	??rc_axi_hls_585_5 (???????)
+
+	1. ????????????ip_clk 
+
+	???
+		1. EP-EP test http://192.168.0.137/svn/RostaSdkLin/branches/sdk2/rc47/tests/pcie/rc_ep/rc_ep_test
+				OK up to 4 MB
+				
+		2. AXI BRAM test http://192.168.0.137/svn/RostaSdkLin/branches/sdk2/rc47/examples/axi_mem
+				OK: rc47_axi_ddr -b 0 -v C0 -mode simple -s 0xA0000000 -l 0x1000	
+	
+
+rc_axi_hls_585_3
+
+	1. New user ip for axi mem and ep-ep tests
+	2. new fifo_to_axi (no move)
+	3. New Master block ver 2
+	
+	???
+		1. EP-EP test http://192.168.0.137/svn/RostaSdkLin/branches/sdk2/rc47/tests/pcie/rc_ep/rc_ep_test
+				OK up to 4 MB
+				
+		2. AXI BRAM test http://192.168.0.137/svn/RostaSdkLin/branches/sdk2/rc47/examples/axi_mem
+				OK: rc47_axi_ddr -b 0 -v C0 -mode simple -s 0xA0000000 -l 0x1000	
+	
+	
+
+rc_pcie_axi_585_0
+
+	?????? ??????? ??? ?????, ???DR ????, ???RAM
+	
+	????
+
+	http://192.168.0.137/svn/RostaSdkLin/branches/sdk2/rc47/examples/axi_mem
+
+	???????rc47_axi_dma ?c47_axi_ddr -mode simple -s 0xA0000000 -l 0x1000
+	
+
+rc_pcie_ddr_585_3
+	Vivado 2013.2	
+
+	AXI bus with DDR controller from rc_pcie_axi_ddr_2 project
+	
+	?????? ??? ??????????? AXI ??? DDR3 ?????
+	1. ç?????????2. ??? user_ip, ???????tamover ...
+	3. ???? ??? clk_wiz OUT ?100 ??????????? ???xi_system
+	4. U?? XPS ?? (xmp ??)
+	5. ???? wisard ?????DDR ???????? xdc ?? ??nout)
+	6.  Vivado ????dc ?? ? ???? DDR3 
+		(scoped to cell user/abus/axi_7series_ddrx_0/axi_7series_ddrx_0)
+	7. ??? top.xdc (???????????
+		???Startup NoWait
+	8. ???mmcm ??????PS ?? - ??R???- ???????? ????place
+		(??????clk_wiz)
+		
+
+
+rc_pcie_base_585_5
+
+	Vivado 2013.2	
+	PCIe core v 2.1
+
+	
+rc_pcie_base_585_4
+
+	Vivado 2012.4
+	
+	PCIe core v 1.7	
+	
+	1. ibuf ?? sys_rst_n moved to rosta_pcie block
+	2. ip_clk generation moved to user_ip. 
+	3. Master block is from rc_pcie_base_2000_1 - with actual EP interface and 256 bytes payload capable
+	4. ip_clk = 250 MHz
+
+rc_pcie_base_585_3
+
+	1. TopDownReuse ??????- ?? ??????????UI Vivado
+	2. ???? ???XI Bus - ?????????????user_ip
+	3.  ???????IE, ????? Vivado ??????????????????
+
+rc_pcie_base_585_2
+
+	1. ????????
+		-flatten_hierarchy none
+	
+	2. í?? ??Master ?????? ??? - ip_clk, ???
+		m_rxd_clk
+		s_txd_clk
+		Reg_clk
+	
+	3. ????????? ???? ????osta (? ?AXI Stream)
+	
+	4. ñ???OBUFs ???osta; and disabled iobuf insertion at top level 
+	
+	5.  user_ip ??????axi_system (just BRAM) 
+	
+	not tested in hardware
+
+rc_pcie_base_585_1
+
+	stared work to fix pcie partition
+
+	got good results when created pbock constraint on rosta_pcie block
+
+rc_pcie_base_585_0
+
+04.02.13	
+	Created project from pcie_7x_v1_7_g2 (from Vlad)
+	
+	Fixed issue with asynch clocks
+	
+	DMA test ok

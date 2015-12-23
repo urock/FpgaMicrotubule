@@ -1,0 +1,74 @@
+version 1.03 
+
+	1. Added signalling of end of writing descriptors to fpga in rsp_read. The signalling is done with the help of fasync.  
+--tasha
+
+version 1.02
+
+	27.09.2013
+		
+		version 1.02		
+
+		Added checking for NULL pointer and zero transfer size in rsp_write and rsp_read
+	
+	
+	27.08.2013
+		
+		version 1.02		
+	
+		code update for KERNEL > 3.0 with conditional compilation
+		
+
+	29.10.2012
+		fixed issue with dual dma. interrupt service didn't work correctlly
+		rsp_device->rsp_device_access was not set when starting dual dma transfer
+
+
+version 1.01 
+
+	1. Added driver version to driver attributes file
+	
+	2. fixed bug with dma transfer length not multiples of page size 
+
+
+
+version 1.0
+
+static struct pci_device_id rsp_board_pci_tbl[] = { 
+		{ 0x1819, 0x0527, PCI_ANY_ID, PCI_ANY_ID, 0, 0, 0 }, 
+		{ 0x1819, 0x0529, PCI_ANY_ID, PCI_ANY_ID, 0, 0,	0 }, 
+		{ 0x1819, 0xB007, PCI_ANY_ID, PCI_ANY_ID, 0, 0, 0 },
+		{ 0x1819, 0x0047, PCI_ANY_ID, PCI_ANY_ID, 0, 0, 0 },
+		{ 0x1819, 0x0747, PCI_ANY_ID, PCI_ANY_ID, 0, 0, 0 },
+		{ 0x1819, 0xB003, PCI_ANY_ID, PCI_ANY_ID, 0, 0, 0 }, { 0, } };
+
+
+static ssize_t show_cdev(struct device_driver *driver, char *buf) {
+	return snprintf(buf, PAGE_SIZE, "%d %d\n", rsp_major, rsp_minor);
+}	
+
+	// Add the instance number to the device
+	pci_msg_err = device_create_file(&dev->dev, &dev_attr_rosta_dev_instance);
+	
+ssize_t show_instance(struct device *dev, struct device_attribute *attr, char *buf) {
+	struct rsp_device *rsp_dev = dev_get_drvdata(dev);
+
+	return snprintf(buf, PAGE_SIZE, "%d\n", rsp_dev->instance);
+}
+
+
+
+Functions:
+
+		rsp_write
+		rsp_read
+		
+IOCTL:
+		
+		RSP_DEV_INFO
+		RSP_BAR_INFO
+		RSP_REG32_READ
+		RSP_REG32_WRITE
+		RSP_SET_PACKET_LEN
+		RSP_DUAL_DMA
+		RSP_P2P_DMA

@@ -1,0 +1,12 @@
+23.07.2013
+	
+	file changed to support new lib name: RostaPCIeAPI
+
+01.02.2013
+
+	1. do_and_test macro changed: now returning negative value on error
+	2. get_driver_numbers now returns driver version info
+	3. functions renamed in RD_ fashion
+
+	
+	

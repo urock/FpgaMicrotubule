@@ -1,0 +1,12 @@
+
+
+Модель генерации Normal Random Distribuition на FPGA
+
+	- Вихрь
+	- Мюллер с проверкой S2<1
+	
+	- HLS схема генерирует поток чисел и помещает их в fifo. размер слова fifo - 2 float
+	
+	- Synth OK II = 1
+	
+	- Resource saving optimisztions
