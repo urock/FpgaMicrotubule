@@ -31,9 +31,9 @@ float t_11[13][N_d];
 
 
 // во время дебага TOTAL_STEPS можно делать меньше
-#define STEPS_TO_WRITE		100000			// через это значение шагов сравниваем координаты и выводим в файл
+#define STEPS_TO_WRITE		10000000			// через это значение шагов сравниваем координаты и выводим в файл
 
-#define N				1			// количчество  запусков функций mt_cpu и mt_fpga
+#define N				10			// количчество  запусков функций mt_cpu и mt_fpga
 
 #define TOTAL_STEPS			(STEPS_TO_WRITE*N)		// полное количество шагов по времени
 
@@ -67,7 +67,7 @@ int main(int argc, char *argv[])
 	
 
 
-	printf("TOTAL_STEPS = %d\nSTEPS_TO_WRITE = %d N_d = %d \n", TOTAL_STEPS, STEPS_TO_WRITE, N_d);
+	printf("TOTAL_STEPS = %d\nSTEPS_TO_WRITE = %d N_d = %d  Number of threads %d\n", TOTAL_STEPS, STEPS_TO_WRITE, N_d, N_threads);
 
 
 

@@ -421,9 +421,9 @@ for (int i=0; i<13; i++) {
 
 
 
-			x[i][j] -= dt_viscPF * f_x		+  sqrt_PF_xy*rand_buf[0];///rand1*sqrt_PF_xy;
-			y[i][j] -= dt_viscPF * f_y		+ sqrt_PF_xy*rand_buf[1];///rand2*sqrt_PF_xy;
-			t[i][j] -= dt_viscPF_teta * f_t	+ sqrt_PF_teta*rand_buf[2];///rand3*sqrt_PF_teta;
+			x[i][j] -= dt_viscPF * f_x 			+  sqrt_PF_xy*rand_buf[0];///rand1*sqrt_PF_xy;
+			y[i][j] -= dt_viscPF * f_y 			+ sqrt_PF_xy*rand_buf[1];///rand2*sqrt_PF_xy;
+			t[i][j] -= dt_viscPF_teta * f_t 	+ sqrt_PF_teta*rand_buf[2];///rand3*sqrt_PF_teta;
 
 		}
 
