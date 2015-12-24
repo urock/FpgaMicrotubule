@@ -1,0 +1,46 @@
+OpenCL benchmark software
+
+
+Install:
+
+AMD: 
+http://developer.amd.com/tools-and-sdks/opencl-zone/amd-accelerated-parallel-processing-app-sdk/
+
+Intel: 
+https://software.intel.com/en-us/articles/opencl-drivers
+https://software.intel.com/en-us/intel-opencl-support/code-samples
+
+NVidia: 
+https://developer.nvidia.com/cuda-downloads
+
+
+Usage:
+
+Help:
+./mt_bench -h
+
+OpenCL benchmarks:
+
+# amd
+. set_amd
+./mt_bench -st 1000000 -stw 1000000 -cpu 0 -cmp 0 -ocl 1
+
+#nvidia
+. set_nv
+./mt_bench -st 1000000 -stw 1000000 -cpu 0 -cmp 0 -ocl 1
+
+
+#intel
+. set_intel
+./mt_bench -st 1000000 -stw 1000000 -cpu 0 -cmp 0 -ocl 1
+
+
+Debug:
+
+# pthread 12/4 = 3 WG
+./mt_bench -st 1000000 -stw 1000000 -cpu 1 -cpu2 1 -lszy 4
+
+
+# ocl 12/4 = 3 WG
+./mt_bench -st 1000000 -stw 1000000 -cpu 1 -cpu2 1 -lszy 4
+

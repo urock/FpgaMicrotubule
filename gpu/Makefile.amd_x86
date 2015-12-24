@@ -1,0 +1,44 @@
+system_name := $(shell sh -c 'uname -s 2>/dev/null || echo not')
+
+CXX=g++
+
+SDK=/home/alex/AMDAPPSDK-3.0-0-Beta
+LIBS=$(SDK)/lib/x86
+
+CODEDIR=.
+
+CCFLAGS=-O3 -Wno-unused -Wno-deprecated-declarations
+#CCFLAGS=-Wno-unused -Wno-deprecated-declarations
+
+CCFLAGS+=-I$(CODEDIR) -I$(SDK)/include
+
+CCFLAGS+=-std=c++11
+
+#LDFLAGS = -L$(LIBS) -lOpenCL -lrt 
+
+LDFLAGS = -L$(LIBS) -lOpenCL -lrt -pthread
+
+
+all: mt_cpu.o mt_cpu_mt.o mt_ocl.o Timer.o mt_bench.o 
+	$(CXX)	$^ -o mt_bench $(LDFLAGS)
+
+mt_cpu.o: mt_cpu.cpp
+	$(CXX)	$^ -c  $(CCFLAGS) $(LDFLAGS)  -o $@
+
+mt_cpu_mt.o: mt_cpu_mt.cpp
+	$(CXX)	$^ -c  $(CCFLAGS) $(LDFLAGS)  -o $@
+
+mt_ocl.o: mt_ocl.cpp
+	$(CXX)	$^ -c  $(CCFLAGS) $(LDFLAGS)  -o $@
+
+Timer.o: Timer.cpp
+	$(CXX)	$^ -c  $(CCFLAGS) $(LDFLAGS)  -o $@
+
+mt_bench.o: mt_bench.cpp
+	$(CXX)	$^ -c  $(CCFLAGS) $(LDFLAGS)  -o $@
+
+
+clean:
+	rm -f mt_bench
+	rm -f *.o *~ *.txt
+

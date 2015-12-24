@@ -1,0 +1,2 @@
+export LD_LIBRARY_PATH=/opt/cuda7/lib64
+

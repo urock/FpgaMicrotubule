@@ -1,0 +1,36 @@
+system_name := $(shell sh -c 'uname -s 2>/dev/null || echo not')
+
+CXX=/usr/local/cuda/bin/nvcc
+
+SDK=/usr/local/cuda
+IBS=$(SDK)/lib64
+
+
+
+CODEDIR=.
+
+CCFLAGS=-ccbin g++
+
+CCFLAGS+=-I$(CODEDIR) -I$(SDK)/include
+
+CCFLAGS+=-m64 -O3
+
+CCFLAGS+=-gencode=arch=compute_35,code=sm_35
+
+all: mt_cuda_multi.o mt_cpu_cuda.o Timer_cuda.o
+	$(CXX)	$^ -o mt_bench_cuda_multi
+
+mt_cuda_multi.o: mt_cuda_multi.cu
+	$(CXX)	$(CCFLAGS) -c $^ -o $@
+
+mt_cpu_cuda.o: mt_cpu.cpp
+	$(CXX)	$(CCFLAGS) -c $^ -o $@
+
+Timer_cuda.o: Timer.cpp
+	$(CXX)	$(CCFLAGS) -c $^ -o $@
+
+
+clean:
+	rm -f mt_bench_cuda_multi
+	rm -f *.o
+

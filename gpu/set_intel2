@@ -1,0 +1,2 @@
+export LD_LIBRARY_PATH=/opt/intel/intel-opencl-1.2-5.0.0.43/opencl-1.2-5.0.0.43/lib64
+

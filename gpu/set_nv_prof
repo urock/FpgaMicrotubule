@@ -1,0 +1,3 @@
+export COMPUTE_PROFILE=1
+export COMPUTE_PROFILE_LOG=/tmp/compute_profile.log
+
