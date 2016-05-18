@@ -4,20 +4,20 @@
 #include <stdlib.h>
 #include <limits.h>
 #include <iostream>
- 
+
 
 
 void init_coords(float x[][N_d], float y[][N_d], float t[][N_d]);
 int compare_results(float x_1[][N_d], float y_1[][N_d], float t_1[][N_d],
 						float x_2[][N_d], float y_2[][N_d], float t_2[][N_d] );
-											
-						
+
+
 void print_coords(FILE *f_p, float x[][N_d], float y[][N_d], float t[][N_d]);
 
 
-						
+
 //#define COMPARE
-#define BUF_LEN_B		4096	
+#define BUF_LEN_B		4096
 
 
 float x_1[13][N_d];
@@ -31,16 +31,16 @@ float t_11[13][N_d];
 
 
 // во время дебага TOTAL_STEPS можно делать меньше
-#define STEPS_TO_WRITE		10000000			// через это значение шагов сравниваем координаты и выводим в файл
+#define STEPS_TO_WRITE		100000			// через это значение шагов сравниваем координаты и выводим в файл
 
-#define N				10			// количчество  запусков функций mt_cpu и mt_fpga
+#define N				2			// количчество  запусков функций mt_cpu и mt_fpga
 
 #define TOTAL_STEPS			(STEPS_TO_WRITE*N)		// полное количество шагов по времени
 
 
 #define MARGIN		0.01f
 
-	
+
 int main(int argc, char *argv[])
 {
 	 FILE  *f_p;
@@ -53,18 +53,18 @@ int main(int argc, char *argv[])
 		 printf("Error opening file!\n");
 		 return -1;
 	 }
-	 
-	 
+
+
 	srand(time(NULL));
 	//box_mull 	rg1((1 + (2 * rand ()) %ULONG_MAX),(1 + (2 * rand ()) %ULONG_MAX));
 	//box_mull	rg2((1 + (2 * rand ()) %ULONG_MAX),(1 + (2 * rand ()) %ULONG_MAX));
-	
+
 	int seeds[4*N_threads];
 	for (int i =0; i<4*N_threads; i++){
 	seeds[i]=rand();
 	}
 
-	
+
 
 
 	printf("TOTAL_STEPS = %d\nSTEPS_TO_WRITE = %d N_d = %d  Number of threads %d\n", TOTAL_STEPS, STEPS_TO_WRITE, N_d, N_threads);
@@ -78,32 +78,32 @@ int main(int argc, char *argv[])
 
 
 	 int flag_seed;
-	 
-	 
+
+
 	 for(int k=0; k<N; k++) {
-	 
+
 	 flag_seed=(k==0) ? 1:0;
 
 		//mt_cpu(STEPS_TO_WRITE,1,x_1,y_1,t_1,x_1,y_1, t_1,rg1,rg2);
-		
+
 		mt_cpu(STEPS_TO_WRITE,1,x_1,y_1,t_1,x_1,y_1, t_1,flag_seed,seeds,1);
 	#ifdef COMPARE
 		mt_cpu(STEPS_TO_WRITE,1,x_11,y_11,t_11,x_11,y_11, t_11,flag_seed,seeds,0);
 		if (compare_results(x_1, y_1, t_1, x_11, y_11, t_11)) std::cout<<"Compare errors"<<std::endl;
 	#endif
-		
-		
+
+
 
 		print_coords(f_p, x_1, y_1, t_1);
-		
+
 
 	}
-	
+
 
 	fclose(f_p);
 
 
-	return 0; 
+	return 0;
 
 }
 

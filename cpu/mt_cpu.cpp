@@ -193,38 +193,52 @@ void mt_cpu(   int      n_step,
 
    bit type[13][N_d];
 
-   float ** x = new float * [13];
-   float ** y = new float * [13];
-   float ** t = new float *[13];
-   float ** lat_l_x = new float *[13];
-   float ** lat_l_y = new float * [13];
-   float ** lat_l_t = new float * [13];
-   float ** lat_r_x = new float * [13];
-   float ** lat_r_y = new float * [13];
-   float ** lat_r_t = new float * [13];
-   float ** long_u_x = new float * [13];
-   float ** long_u_y = new float * [13];
-   float ** long_u_t = new float * [13];
-   float ** long_d_t = new float * [13];
+   float x [13][N_d];
+   float y [13][N_d];
+   float t [13][N_d];
+   float lat_l_x [13][N_d];
+   float lat_l_y [13][N_d];
+   float lat_l_t [13][N_d];
+   float lat_r_x [13][N_d];
+   float lat_r_y [13][N_d];
+   float lat_r_t [13][N_d];
+   float long_u_x [13][N_d];
+   float long_u_y [13][N_d];
+   float long_u_t [13][N_d];
+   float long_d_t [13][N_d];
+
+   // float ** x = new float * [13];
+   // float ** y = new float * [13];
+   // float ** t = new float *[13];
+   // float ** lat_l_x = new float *[13];
+   // float ** lat_l_y = new float * [13];
+   // float ** lat_l_t = new float * [13];
+   // float ** lat_r_x = new float * [13];
+   // float ** lat_r_y = new float * [13];
+   // float ** lat_r_t = new float * [13];
+   // float ** long_u_x = new float * [13];
+   // float ** long_u_y = new float * [13];
+   // float ** long_u_t = new float * [13];
+   // float ** long_d_t = new float * [13];
 
 
 
 
-   for (int i =0; i < 13; i++) {
-      x[i] = new  float [N_d+3];
-      y[i] = new  float [N_d+3];
-      t[i] = new  float [N_d+3];
-      lat_l_x[i] = new  float [N_d+3];
-      lat_l_y[i] = new  float [N_d+3];
-      lat_l_t[i] = new  float [N_d+3];
-      lat_r_x[i] = new  float [N_d+3];
-      lat_r_y[i] = new  float [N_d+3];
-      lat_r_t[i] = new  float [N_d+3];
-      long_u_x[i] = new  float [N_d+3];
-      long_u_y[i] = new  float [N_d+3];
-      long_u_t[i] = new  float [N_d+3];
-      long_d_t[i] = new  float [N_d+3];
-   }
+   // for (int i =0; i < 13; i++) {
+   //    x[i] = new  float [N_d+3];
+   //    y[i] = new  float [N_d+3];
+   //    t[i] = new  float [N_d+3];
+   //    lat_l_x[i] = new  float [N_d+3];
+   //    lat_l_y[i] = new  float [N_d+3];
+   //    lat_l_t[i] = new  float [N_d+3];
+   //    lat_r_x[i] = new  float [N_d+3];
+   //    lat_r_y[i] = new  float [N_d+3];
+   //    lat_r_t[i] = new  float [N_d+3];
+   //    long_u_x[i] = new  float [N_d+3];
+   //    long_u_y[i] = new  float [N_d+3];
+   //    long_u_t[i] = new  float [N_d+3];
+   //    long_d_t[i] = new  float [N_d+3];
+   // }
 
 
    int i,j;
@@ -258,15 +272,14 @@ void mt_cpu(   int      n_step,
    float f_x=0, f_y=0, f_t=0;
    int thr_num = 0;
 
-#ifdef RunOpenMP
+
 
    omp_set_nested(1);
    omp_set_dynamic(0);
    omp_set_num_threads(N_threads);
 
-   #pragma omp parallel default(shared) private(f_x, f_y, f_t)  num_threads(N_threads) if (ompflag)//for  schedule(static, 3) //default(none) firstprivate() shared() shared (x, lat_l_x, lat_l_y, lat_l_t, lat_r_x, lat_r_y, lat_r_t, long_u_x, long_u_y, long_u_t, long_d_x, long_d_y, long_d_t)
+   #pragma omp parallel private(x, y, t, lat_l_x, lat_l_y, lat_l_t, lat_r_x, lat_r_y, lat_r_t, long_u_x, long_u_y, long_u_t, long_d_t)  num_threads(N_threads) if (ompflag)//for  schedule(static, 3) //default(none) firstprivate() shared() shared (x, lat_l_x, lat_l_y, lat_l_t, lat_r_x, lat_r_y, lat_r_t, long_u_x, long_u_y, long_u_t, long_d_x, long_d_y, long_d_t)
    {
-#endif
 
 
       //////****Main parallel cycle********///////
@@ -335,9 +348,8 @@ void mt_cpu(   int      n_step,
 
       } // n_step
 
-#ifdef RunOpenMP
+
    }
-#endif
 
    t2=omp_get_wtime();
    delta_t = t2 - t1;
