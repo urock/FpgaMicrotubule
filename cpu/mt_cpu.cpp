@@ -314,8 +314,8 @@ void mt_cpu(   int      n_step,
 
                float rand_buf[4];
 
-               if (get_norm_vals(0, &rand_buf[0], &rand_buf[1])!=0) {printf("NaN error!!!!\n"); return -1;}
-               if (get_norm_vals(1, &rand_buf[2], &rand_buf[3])!=0) {printf("NaN error!!!!\n"); return -1;}
+               if (get_norm_vals(0, &rand_buf[0], &rand_buf[1])!=0) {printf("NaN error!!!!\n"); }
+               if (get_norm_vals(1, &rand_buf[2], &rand_buf[3])!=0) {printf("NaN error!!!!\n"); }
 
 
                float temp1 = - long_u_x[i][j-1];
