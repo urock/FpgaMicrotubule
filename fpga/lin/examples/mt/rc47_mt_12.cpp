@@ -23,6 +23,10 @@ unsigned int 	*rd_buf, *rd_buf_free;
 bool flag_compare, flag_rand;
 unsigned int N_d;
 
+unsigned int length;	//length of MT with counting shifts
+int NStop[13];	//numbers of last monomers;
+int NStart[13];	//numbers of first monomers;
+
 int flag_seed = 1;
 
 
@@ -40,6 +44,7 @@ vector<vector<float> > x_2;
 vector<vector<float> > y_2;
 vector<vector<float> > t_2;
 
+vector<vector<float> > type_mol;	//types
 
 int seeds[NUM_SEEDS];
 
@@ -49,15 +54,106 @@ const int test_seeds[NUM_SEEDS] = {	0x10000000, 0x20000000, 0x30000000, 0x400000
 									0x60000000, 0x70000000, 0x80000000, 0x90000000, 0xA0000000  };
 
 
-#define STEPS_TO_WRITE		1000			// через это значение шагов сравниваем координаты и выводим в файл
+#define STEPS_TO_WRITE		500000			// steps in fpga. was 1000 ; 5000000*100 to almost destroy	//500000
 
-#define N	10				// количчество  запусков функций mt_cpu и mt_fpga
+#define N	80				// steps to write   number of time steps was 100?
 
 #define TOTAL_STEPS			(STEPS_TO_WRITE*N)		// полное количество шагов по времени
 
 #define absTol		0.001f
 #define relTol		0.001f
 
+#define cut_off 1.0 		//for deattach
+
+#define nullHigh 10			//indent from top at the beginning
+
+/* Period parameters for randomiser*/ //////////////////////////////////// 
+//#include <cmath>
+#define N_period 624
+#define M_period 397
+#define MATRIX_A 0x9908b0dfUL   /* constant vector a */
+#define UPPER_MASK 0x80000000UL /* most significant w-r bits */
+#define LOWER_MASK 0x7fffffffUL /* least significant r bits */
+class Random
+{		
+	public:
+		Random(unsigned long s) {
+			mti=N_period+1;
+			init_genrand(s);
+			r1 = 0; r2 = 0; s = 0; rho = 0;
+			valid = false;
+		};
+		~Random(){};		
+		float Normal_dist(void);
+		double genrand_real2(void);
+
+	private:
+		float r1, r2, s, rho;
+		bool valid;
+		void init_genrand(unsigned long s);
+		unsigned long mt[N_period]; /* the array for the state vector  */
+		int mti;					/* mti==N_period+1 means mt[N_period] is not initialized */
+};
+float Random :: Normal_dist(void)
+{
+	if (!valid)
+	{
+		do {
+		r1 = 2.0*genrand_real2() - 1;
+		r2 = 2.0*genrand_real2() - 1;
+		s = r1 * r1 + r2 * r2;
+		} 
+		while (s > 1);
+		rho = sqrtf((float)-2.0 * logf(s)/s);
+		valid = true;
+	} else {
+	valid = false;
+	}	
+	return rho * (valid ? r1 : r2); //return rho * (valid ? r1 : r2) * m_sigma + m_mean;
+};
+double Random :: genrand_real2(void)
+{
+    unsigned long y;
+    static unsigned long mag01[2]={0x0UL, MATRIX_A};
+    /* mag01[x] = x * MATRIX_A  for x=0,1 */
+
+    if (mti >= N_period) { /* generate N_period words at one time */
+        int kk;
+        if (mti == N_period+1)   /* if init_genrand() has not been called, */
+            init_genrand(5489UL); /* a default initial seed is used */
+
+        for (kk=0;kk<N_period-M_period;kk++) {
+            y = (mt[kk]&UPPER_MASK)|(mt[kk+1]&LOWER_MASK);
+            mt[kk] = mt[kk+M_period] ^ (y >> 1) ^ mag01[y & 0x1UL];
+        }
+        for (;kk<N_period-1;kk++) {
+            y = (mt[kk]&UPPER_MASK)|(mt[kk+1]&LOWER_MASK);
+            mt[kk] = mt[kk+(M_period-N_period)] ^ (y >> 1) ^ mag01[y & 0x1UL];
+        }
+        y = (mt[N_period-1]&UPPER_MASK)|(mt[0]&LOWER_MASK);
+        mt[N_period-1] = mt[M_period-1] ^ (y >> 1) ^ mag01[y & 0x1UL];
+        mti = 0;
+    }  
+    y = mt[mti++];
+    /* Tempering */
+    y ^= (y >> 11);
+    y ^= (y << 7) & 0x9d2c5680UL;
+    y ^= (y << 15) & 0xefc60000UL;
+    y ^= (y >> 18);
+    return y*(1.0/4294967296.0); 
+	//return y*2.328306436538696e-10;
+};
+void Random :: init_genrand(unsigned long s)
+{
+    mt[0]= s & 0xffffffffUL;
+    for (mti=1; mti<N_period; mti++) {
+        mt[mti] = 
+	    (1812433253UL * (mt[mti-1] ^ (mt[mti-1] >> 30)) + mti); 
+        mt[mti] &= 0xffffffffUL;
+        /* for >32 bit machines */
+    }
+};
+/////////////////////////////////////////////////
 
 int main(int argc, char *argv[])
 {
@@ -75,10 +171,10 @@ int main(int argc, char *argv[])
 	printf("N_d is %d\n",N_d);
 	
 	printf("size is %d\n",(int)SIZE_DWORD);
-
+	
 	try{
 		
-
+		type_mol.resize(13);
 		x_1.resize(13);
 		y_1.resize(13);
 		t_1.resize(13);
@@ -86,6 +182,7 @@ int main(int argc, char *argv[])
 		y_2.resize(13);
 		t_2.resize(13);
 		for (int i = 0; i < 13; i++){
+			type_mol[i].resize(N_d);
 			x_1[i].resize(N_d);
 			y_1[i].resize(N_d);
 			t_1[i].resize(N_d);
@@ -97,7 +194,7 @@ int main(int argc, char *argv[])
 	} catch (const  std::bad_alloc& ba){
 		std::cout << "bad_alloc caught: " << ba.what() << std::endl;
 	}	
-	FILE  *f_p, *f_p1;
+	FILE  *f_p, *f_p1, *f_length, *f_type;
 
 	int error = 0;
 	if (flag_compare==1){
@@ -113,6 +210,9 @@ int main(int argc, char *argv[])
 	if (flag_file)		f_p1 = fopen (out_file,"w");
 	else 				f_p1 = fopen ("MT_coords_FPGA.txt","w");
 	
+	f_length = fopen ("len_MT_coords_FPGA.txt","w");
+	f_type = fopen ("type_MT_coords_FPGA.txt","w");
+	
 	if (f_p1==NULL) {
 
 		printf("Error opening file!\n");
@@ -124,7 +224,13 @@ int main(int argc, char *argv[])
 
 	printf("TOTAL_STEPS = %d\nSTEPS_TO_WRITE = %d\n", TOTAL_STEPS, STEPS_TO_WRITE);
 
-
+	for(int i = 0; i < 13; i++) {
+		NStop[i] = N_d - nullHigh;
+	}
+	for(int i = 0; i < 13; i++) {
+		NStart[i] = 0;
+	}
+	length = NStop[0] - NStart[0];
 
 	// get golden results
 	init_coords(x_1,y_1,t_1);
@@ -145,30 +251,13 @@ int main(int argc, char *argv[])
 	*
 	*/
 	error = 0; 
-	
-	struct timeval time; 
-     gettimeofday(&time,NULL);
-
-     // microsecond has 1 000 000
-     // Assuming you did not need quite that accuracy
-     // Also do not assume the system clock has that accuracy.
-     srand((time.tv_sec * 1000) + (time.tv_usec / 1000));
-
-     // The trouble here is that the seed will repeat every
-     // 24 days or so.
-
-     // If you use 100 (rather than 1000) the seed repeats every 248 days.
-
-     // Do not make the MISTAKE of using just the tv_usec
-     // This will mean your seed repeats every second.
-	 
 
 	
 	printf("\nFlag rand is SET, %d\n\n",flag_rand);
 	
 	if (flag_rand==1) 	  {
 		
-		//srand (time(NULL));
+		srand (time(NULL));
 		
 		// set seed vals
 		for (int i =0; i < NUM_SEEDS; i++){
@@ -179,8 +268,6 @@ int main(int argc, char *argv[])
 #endif
 			unsigned int addr = SEED_REG + 4*i;
 			RD_WriteDeviceReg32m(dev, CNTRL_BAR, addr, seeds[i]);	
-			
-			printf("seed %x \n",seeds[i]); 
 		}		
 		
 		printf("\nFlag rand is SET\n\n");
@@ -207,24 +294,22 @@ int main(int argc, char *argv[])
 	
 	
 	printf("\n\nhereerereerere\n\n");
-	
-	
 
+	int temp = 0;
 	for(int k=0; k<N; k++) {
-
 
 		int err;
 		struct timeval tt1, tt2;
 		if (flag_compare==1){
 			get_time(&tt1);
-			if (mt_cpu(STEPS_TO_WRITE,1, flag_rand, flag_seed, seeds,  x_1,y_1,t_1,x_1,y_1, t_1)<0) { printf("Nan Error in cpu. Step is %d. Exitting....\n",k); break;}
+			if (mt_cpu(STEPS_TO_WRITE,1, flag_rand, flag_seed, seeds,  x_1,y_1,t_1,x_1,y_1, t_1, N_d)<0) { printf("Nan Error in cpu. Step is %d. Exitting....\n",k); break;}
 
 			get_time(&tt2);
 			calc_dt(&tt1,&tt2, &dt_c[k]);
 		}
 		
 		get_time(&tt1);
-		mt_fpga(dev,STEPS_TO_WRITE,1,x_2,y_2,t_2,x_2,y_2, t_2);
+		mt_fpga1(dev,STEPS_TO_WRITE,1,x_2,y_2,t_2,x_2,y_2, t_2, type_mol);
 		get_time(&tt2);
 		calc_dt(&tt1,&tt2, &dt_f[k]);
 
@@ -241,9 +326,70 @@ int main(int argc, char *argv[])
 		}
 
 
+//-------------------------------------- add reattach, kinetics---------------------------------------------------------------------------------------------------
+		/*if (temp == 12) {
+			temp = 0;
+		}
+		*/
+		
+		/*
+	for(i = 0; i < 13; i++) {
+		gen_rand = Rnd_pol.genrand_real2();
+		temp++;*/
+		//for (temp=0; temp<24; temp++)
+		//printf("y_2[0][] = %f\n", y_2[0][temp]);
+		//removeDimer(temp, x_2,y_2,t_2);
+		//printf("N[5] = %i, max = %i, min = %i, y = %fy = %fy = %fy = %fy = %f\n", NStop[5], max_N(NStop), min_N(NStop), y_2[1][0], y_2[1][1], y_2[1][2], y_2[1][3], y_2[1][4], y_2[1][5]);
+		int i = 10, j = 34, j1;
+		
+		
+		/*
+		printf("y_2[11][11] = %f\n", y_2[11][11]);
+		printf("y_2[11][10] = %f\n", y_2[11][10]);
+		printf("y_2[11][9] = %f\n", y_2[11][9]);
+		printf("y_2[10][11] = %f\n", y_2[10][11]);
+		printf("y_2[12][11] = %f\n", y_2[12][11]);*/
+		/*for (i=0; i<13; i++) {
+			for (j=0; j<N_d; j++) {
+				if (y_2[i][j] == -100) printf("NONONONO");
+			}
+		}*/
+		//fixed -> check?, fix 250!
+		//printf("r = %f\n", getDistance(x_2[1][j+1], y_2[i][j+1], t_2[i][j+1], x_2[i][j], y_2[i][j], t_2[i][j]));
+		
+		for (i=0; i<13; i++) {
+			for (j=NStart[i]; j<NStop[i]-1; j++) {
+				if (getDistance(x_2[i][j+1], y_2[i][j+1], t_2[i][j+1], x_2[i][j], y_2[i][j], t_2[i][j]) >= cut_off) {	//molecule deattached
+					//printf("deattached :%i %i r = %f\n", i, j,getDistance(x_2[i][j+1], y_2[i][j+1], t_2[i][j+1], x_2[i][j], y_2[i][j], t_2[i][j]));
+					for (j1=j; j1<NStop[i]; j1++) {
+						y_2[i][j1] = -100;
+						type_mol[i][j1] = -1;	//'-'
+						printf("deattached :%i %i\n", i, j1);
+						//todo type change
+					} 
+					NStop[i] = j;
+				}
+			}
+		}
+		
+		polimerization_algorithm(x_2, y_2, t_2, (float) tt1.tv_usec);
+		
+		choose_to_shift_coords(x_2, y_2, t_2);
+		
+		
+//-------------------------------------- add reattach, kinetics---------------------------------------------------------------------------------------------------
+		
 		if (flag_compare==1)	print_coords(f_p, x_1, y_1, t_1);
 		print_coords(f_p1, x_2, y_2, t_2);
+		print_coords_type(f_type, type_mol);
+		float x_avg, y_avg = 0;;
+		for (i = 0; i < 13; i++) {
+			y_avg += y_2[i][NStop[i]-1];
+		}
+		printf("avg_y %f \n", y_avg);
 		
+		fprintf(f_length,"%.3f \n", y_avg/13);
+
 
 	}
 	if (flag_compare==1){
@@ -255,7 +401,8 @@ int main(int argc, char *argv[])
 
 	if (flag_compare==1) fclose(f_p);
 	fclose(f_p1);
-
+	fclose(f_length);
+	fclose(f_type);
 
 	RD_ReadDeviceReg32m(dev, CNTRL_BAR, COMMAND_REG, reg_val);
 	
@@ -280,9 +427,6 @@ int main(int argc, char *argv[])
 
 
 
-
-
-
 int mt_fpga(	int 	dev,
 int		n_step,				// полное количество шагов по времени
 int 	load_coords,		//
@@ -295,6 +439,25 @@ vector<vector<float> >  & t_in,
 vector<vector<float> >  & x_out,
 vector<vector<float> >  & y_out,
 vector<vector<float> >  & t_out
+) 
+{
+return -1;	
+}
+
+
+int mt_fpga1(	int 	dev,
+int		n_step,				//time steps to run
+int 	load_coords,		//
+//int seeds[],
+
+vector<vector<float> >  & x_in,
+vector<vector<float> >  & y_in,
+vector<vector<float> >  & t_in,
+
+vector<vector<float> >  & x_out,
+vector<vector<float> >  & y_out,
+vector<vector<float> >  & t_out,
+vector<vector<float> > & type_mol
 ) 
 {	
 
@@ -310,14 +473,23 @@ vector<vector<float> >  & t_out
 	
 	two_floats * buf_in = (two_floats *)wr_buf;
 	
-	// на каждую молекулу отводим 16 байт в памЯти - это 2 64-битных слова
+	// 16 bytes for each molecule 
+			
+	
 	for (i=0; i<13; i++)
 	for (j=0; j<N_d; j++) {
+		
 		tmp.d0 = x_in[i][j];
-		tmp.d1 = y_in[i][j];
+		tmp.d1 = y_in[i][j];		
+		
+		
 		buf_in[k++] = tmp;
 		tmp.d0 = t_in[i][j];
-		tmp.d1 = 0;			
+		if (type_mol[i][j] == -1) {
+			tmp.d1 = 1;
+		} else {
+			tmp.d1 = type_mol[i][j];
+		}		
 		buf_in[k++] = tmp; 
 	}
 
@@ -333,6 +505,44 @@ vector<vector<float> >  & t_out
 	
 	//////////////////////////////////////////////////////////////////////////////
 	RD_WriteDeviceReg32m(dev, CNTRL_BAR, HLS_A, n_step);
+	
+	int p2 = 0;
+	switch(N_d) {
+		case 12:
+			p2 = 0;
+			break;
+		case 24:
+			p2 = 1;
+			break;
+		case 36:
+			p2 = 2;
+			break;
+		case 48:
+			p2 = 3;
+			break;
+		case 60:
+			p2 = 4;
+			break;
+		case 72:
+			p2 = 5;
+			break;
+		case 84:
+			p2 = 6;
+			break;
+		case 108:
+			p2 = 7;
+			break;
+		case 156:
+			p2 = 8;
+			break;
+		case 216:
+			p2 = 9;
+			break;
+		default:
+			p2 = 2;	
+	}
+	
+	RD_WriteDeviceReg32m(dev, CNTRL_BAR, HLS_B, p2);
 	
 	if (fpga_write_to_axi(dev, wr_buf, SIZE_DWORD*sizeof(two_floats), 0x20000000) < 0){
 		fprintf (stderr,"Error in fpga_write_to_axi\n");
@@ -638,6 +848,21 @@ unsigned	int i,j;
 
 		for (j=0; j<N_d; j++)
 		fprintf(f_p,"%.3f\t  ", t[i][j]);
+		
+	}
+
+	fprintf(f_p,"\n");
+
+}
+
+void print_coords_type(FILE *f_p, vector<vector<float> > &type_mol)
+{
+unsigned	int i,j;
+
+	for (i=0; i<13; i++) {
+		
+		for (j=0; j<N_d; j++)
+		fprintf(f_p,"%i\f  ", type_mol[i][j]);
 	}
 
 	fprintf(f_p,"\n");
@@ -658,20 +883,20 @@ void init_coords(vector<vector<float> >  &  x, vector<vector<float> >  &  y, vec
 
 
 	// задание y координат для остальных молекул до половины высоты трубочки
-	for (j=1; j<N_d-4; j++)
+	for (j=1; j<N_d; j++)//-4
 	for (i=0; i<13; i++)
 	y[i][j] = y[i][j-1] + 2.0f*Rad;
 
 
 	// задание x и teta координат так чтобы был цилиндр до половины высоты трубочки
-	for (j=0; j<N_d-5; j++)
+	for (j=0; j<N_d; j++)//-5
 	for (i=0; i<13; i++)  {
 
 		x[i][j] = 0.0;
 		t[i][j] = 0.0;
 	}
 
-
+/*
 	//
 	for (i=0; i<13; i++)  {
 
@@ -689,20 +914,21 @@ void init_coords(vector<vector<float> >  &  x, vector<vector<float> >  &  y, vec
 		t[i][j] = t[i][j-1];
 
 	}
-
-
-	//	x[0][0] = 1;
-	//	y[0][0] = 2;
-	//	t[0][0] = 3;
-	//
-	//	x[0][1] = 4;
-	//	y[0][1] = 5;
-	//	t[0][1] = 6;
-	//
-	//
-	//	x[0][2] = 7;
-	//	y[0][2] = 8;
-	//	t[0][2] = 9;
+*/
+	for (i=0; i<13; i++){
+		for (j=NStart[i]; j<NStop[i]; j++){	
+			type_mol[i][j] = 1;	//	T
+		}
+		/*for(j = NStart[i]-1; j >= 0; j-- ){
+		type_mol[i][j] = 0;	*/// 	'D'
+		
+	for(j = NStop[i]; j < N_d; j++){
+		x[i][j] = 0;		
+		y[i][j] = -100.0;
+		t[i][j] = 0;
+		type_mol[i][j] = -1;	//	'-'	
+	}
+	}
 }
 
 
@@ -749,3 +975,181 @@ int equal(float A, float B)
 	return (fabs(A - B) <= max(absTol, relTol * max(fabs(A), fabs(B))));
 
 }
+
+float getDistance(float x1, float y1, float t1, float x2, float y2, float t2) {
+	float r_long_x = (x1 - x2) - Rad*(sinf(t1) + sinf(t2));
+	float r_long_y = (y1 - y2) - Rad*(cosf(t1) + cosf(t2));
+	float r_long = sqrtf( r_long_x*r_long_x + r_long_y*r_long_y);
+	return r_long;
+}
+
+int max_N(int N_arr[13]) {
+	int i;
+	int NMax = 0;
+	for (i = 0; i<13; i++)
+		if (NMax < N_arr[i]) 
+			NMax = N_arr[i];
+	return NMax;
+}
+
+int min_N(int N_arr[13]) {
+	int i;
+	int NMin = N_arr[0];
+	for (i = 0; i < 13; i++)
+		if (NMin > N_arr[i]) 
+			NMin = N_arr[i];
+	return NMin;
+}
+
+void choose_to_shift_coords(vector<vector<float> >  &  x, vector<vector<float> >  &  y, vector<vector<float> >  &  t) {
+	int NStopMax = max_N(NStop), NStopMin = min_N(NStop);
+	/*
+	if (NStopMax >= N_d - 5 && NStopMin <= 16) {	//Error
+		printf("Error!!! NStopMax >= N_d - 5 && NStopMin <= 16 N_d = %i \n", N_d);
+	}
+	if (NStopMax >= N_d - 8 && NStopMin <= 3) {	//Error
+		printf("NStopMax >= N_d - 8 && NStopMin <= 3N_d = %i \n", N_d);
+	}
+	if (NStopMax >= N_d - 5)
+		shift_coords(x, y, t, false, 16);
+	if (NStopMin <= 4){
+		//printf("%iUOP:  \n",NStop[1]);
+		//for (int i = 0; i < 10; i++)
+		//	printf("%iUOP: %f \n",i, y_2[1][i]);
+		shift_coords(x, y, t, true, 8);
+		//for (int i = 0; i < 10; i++)
+		//	printf("%iUOP: %f \n",i, y_2[1][i]);
+		//printf("%iUOP:  \n",NStop[1]);
+		//printf("UP!");
+		}*/
+		
+		if (NStopMax >= N_d - 5 && NStopMin <= 7) {	//Error
+		printf("Error!!! NStopMax >= N_d - 5 && NStopMin <= 16 N_d = %i \n", N_d);
+	}
+	if (NStopMax >= N_d - 6 && NStopMin <= 3) {	//Error
+		printf("NStopMax >= N_d - 8 && NStopMin <= 3N_d = %i \n", N_d);
+	}
+	if (NStopMax >= N_d - 5)
+		shift_coords(x, y, t, false, 4);
+	if (NStopMin <= 4){
+		//printf("%iUOP:  \n",NStop[1]);
+		//for (int i = 0; i < 10; i++)
+		//	printf("%iUOP: %f \n",i, y_2[1][i]);
+		shift_coords(x, y, t, true, 4);
+		//for (int i = 0; i < 10; i++)
+		//	printf("%iUOP: %f \n",i, y_2[1][i]);
+		//printf("%iUOP:  \n",NStop[1]);
+		//printf("UP!");
+		}
+}
+
+void shift_coords(vector<vector<float> >  &  x, vector<vector<float> >  &  y, vector<vector<float> >  &  t, bool up, const int shift)
+{
+	int i,j;
+	
+	if (up) {
+		for (i=0; i<13; i++){
+		for (j=NStart[i]; j<NStop[i]; j++){
+			
+			x[i][j + shift] = x[i][j];
+			y[i][j + shift] = y[i][j];
+			t[i][j + shift] = t[i][j];
+			type_mol[i][j + shift] = type_mol[i][j];
+		
+		}
+		NStop[i] += shift;
+		}
+		printf("UP!%f", y[1][4+8]);
+		//NStart[i] += shift;
+		length += shift;
+		
+		for (i=0; i<13; i++)
+		for (j = shift-1; j >= 0; j-- ){
+		x[i][j] = x[i][j + 1];		//?need to test
+		y[i][j] = y[i][j + 1] - 2*Rad;
+		t[i][j] = 0;
+		type_mol[i][j] = 0;	//todo  was 'D'
+		}
+		
+	} else {
+		for (i=0; i<13; i++){
+		for (j=shift; j<NStop[i]; j++){
+			
+			x[i][j - shift] = x[i][j];
+			y[i][j - shift] = y[i][j];
+			t[i][j - shift] = t[i][j];
+			type_mol[i][j - shift] = type_mol[i][j];
+		
+		}
+		NStop[i] -= shift;
+		}
+		//NStart[i] -= shift;
+		length -= shift;
+	}
+	
+	for (i=0; i<13; i++)
+	for (j = NStop[i]; j < N_d; j++ ){
+		x[i][j] = 0;		
+		y[i][j] = -100.0;
+		t[i][j] = 0;
+		type_mol[i][j] = -1;	//todo was '-'	
+	}
+	
+}
+
+void addDimer (int i, vector<vector<float> >  &  x, vector<vector<float> >  &  y, vector<vector<float> >  &  t) {
+	if (NStop[i] > N_d-1) return;
+	//todo angle
+	x[i][NStop[i]] = x[i][NStop[i] - 1] + 2*Rad*sinf(t[i][NStop[i] - 1]);		
+	y[i][NStop[i]] = y[i][NStop[i] - 1] + 2*Rad*cosf(t[i][NStop[i] - 1]);
+	t[i][NStop[i]] = t[i][NStop[i]-1];
+	type_mol[i][NStop[i]] = 1;	//T
+	NStop[i]++;
+	x[i][NStop[i]] = x[i][NStop[i] - 1] + 2*Rad*sinf(t[i][NStop[i] - 1]);		
+	y[i][NStop[i]] = y[i][NStop[i] - 1] + 2*Rad*cosf(t[i][NStop[i] - 1]);
+	t[i][NStop[i]] = t[i][NStop[i]-1];
+	type_mol[i][NStop[i]] = 1;	//T
+	NStop[i]++;
+	//type_mol[i][NStop[i]] = 0;	//todo  was 'D'		??1045
+}
+
+void removeDimer (int i, vector<vector<float> >  &  x, vector<vector<float> >  &  y, vector<vector<float> >  &  t) {
+	y_2[i][NStop[i] - 1] = -100;
+	type_mol[i][NStop[i] - 1] = -1;
+	y_2[i][NStop[i] - 2] = -100;
+	type_mol[i][NStop[i] - 2] = -1;
+	NStop[i] -= 2;
+}
+	//t1 = time elapsed, print to console
+void polimerization_algorithm(vector<vector<float> >  &  x, vector<vector<float> >  &  y, vector<vector<float> >  &  t, float t1) {
+	srand((unsigned) time(NULL));
+	unsigned long InitRnd = (t1-(int)t1)*1e+10 + rand();	
+	Random Rnd_pol(InitRnd*1.7 + 0.35*rand());
+	int i, j;
+	float gen_rand;
+	for(i = 0; i < 13; i++) {
+		gen_rand = Rnd_pol.genrand_real2();
+	
+		if(gen_rand <= attachment_probability){		
+				addDimer(i, x, y, t);
+		}
+		
+		int dim_calc = 1;
+		for (j=NStart[i]; j<NStop[i]; j++){
+			//gen_rand = Rnd_pol.genrand_real2();
+			if(dim_calc == 0) {
+				if( type_mol[i][j] == 1 && type_mol[i][j-1] == 1){				
+						if(Rnd_pol.genrand_real2() <= hydrolysis_probability){
+							//printf("%i %iHYDRO:  \n",i, j);
+							type_mol[i][j] = 0;	
+							type_mol[i][j-1] = 0;
+						}
+					}
+			}
+			dim_calc++;
+			if(dim_calc == 2) dim_calc = 0;
+		}
+	}
+}
+
+

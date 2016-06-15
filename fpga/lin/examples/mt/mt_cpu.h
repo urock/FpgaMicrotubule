@@ -25,7 +25,8 @@ int mt_cpu(	int		n_step,				// iieiia eiee?anoai oaaia ii a?aiaie
 
 			vector<vector<float> >  & x_out,		// auoiaiua ianneau eii?aeiao
 			vector<vector<float> >  & y_out,
-			vector<vector<float> >  & t_out
+			vector<vector<float> >  & t_out,
+			int N_d_chooseInput
 );
 
 

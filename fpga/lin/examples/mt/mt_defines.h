@@ -135,4 +135,12 @@ const float Bz_1 = -0.907972693f;
 
 const float Bz_2 = 0.458040982f;
 
+#define kinetic_step_hydrolysis  (0.001f) / (2e-10)  //time step for kinetic algorithm, hydrolysis
+#define K_hydrolysis 9.0f //rate of GTP hydrolysis, s^-1
+#define kinetic_step_attachment  (0.013f) / (2e-10)  //time step for kinetic algorithm, polymerization
+#define K_on 8.3f //on-rate constant for tubulin addition per MT, (uM*s)^-1
+#define concentration 10.0f //soluble tubulin concentration, uM 
+static const double attachment_probability = concentration * K_on * kinetic_step_attachment * dt / 13; //Probability per protofilament
+static const double hydrolysis_probability = K_hydrolysis * kinetic_step_hydrolysis * dt;
+
 #endif //MT_DEF_H
