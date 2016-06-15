@@ -1,7 +1,7 @@
 #ifndef MT_DEF_H
 #define MT_DEF_H
 
-typedef unsigned int uint32_t;
+typedef unsigned int uint32_t;//
 
 #define HLS
 
@@ -26,7 +26,8 @@ union fpoint_uint {
 	fixed *o;
 };
 
-#define N_d 36
+//#define N_d 36
+#define N_d 216	//max size of PF
 
 
 #define viscPF       (4.3e-7*2)	//(1.1e-6  )		// (kcal/mol)*(s/nm^2)
