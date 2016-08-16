@@ -30,66 +30,46 @@ union fpoint_uint {
 #define N_d 216	//max size of PF
 
 
-#define viscPF       (4.3e-7*2)	//(1.1e-6  )		// (kcal/mol)*(s/nm^2)
-#define viscPF_teta  (2.3e-6*2)	//(1.7e-5  )		// (kcal/mol)*s
+#define viscPF_d       		(4.3e-7*2)	//(1.1e-6  )		// (kcal/mol)*(s/nm^2)
+#define viscPF_teta_d  		(2.3e-6*2)	//(1.7e-5  )		// (kcal/mol)*s
+#define B_Koeff_d 			174.0f //kcal/mol   #define B_Koeff 91.25  //kcal/mol
+#define dt_d 				(2e-10) // s
+#define dt_viscPF_teta_d	4.34782596e-5f				//			dt_viscPF = dt/viscPF;
+#define dt_viscPF_d			0.000232558144f				//			dt_viscPF_teta = dt/viscPF_teta;
+#define sqrt_PF_xy_d 		0.016669f
+#define sqrt_PF_teta_d 		0.007207f
+#define R_MT_d 				8.128f
+#define A_Koeff_d 			53.0f
+#define b_lat_d   			12.9f
+#define A_long_D_d 			90.0f
+#define b_long_D_d 			7.9f
+#define A_long_T_d 			90.0f
+#define b_long_T_d 			7.9f
+#define ro0_d       		0.12f
+#define ro0_long_d  		0.12f
+#define inv_ro0_long_d  	8.3333f	// 1/ro0_long
+#define c_lat_d  			0.10f
+#define d_lat_d  			0.25f
+#define C_Koeff_d 			300.0f
+#define Rad_d       		2.0f
+#define inv_ro0_d 			8.3333f 	// = 1 / ro0;
+#define clat_dlat_ro0_d		6.6666f		// 		//clat_dlat_ro0   = 2*c_lat / (d_lat* ro0);
+#define clong_dlong_ro0_d	6.6666f				//clong_dlong_ro0 = 2*c_lat / (d_lat* ro0);
+#define d_lat_ro0_d			33.3333f		// 			d_lat_ro0 = 1 / (d_lat*ro0);
+#define	d_long_ro0_d		33.3333f		//			d_long_ro0 = 1 / (d_lat*ro0_long);
+#define fi_r_d 				1.3291395f
+#define psi_r_d 			1.801785f
+#define fi_l_d  			1.0856f
+#define psi_l_d  			-1.339725f
+#define rad_mon_d 	 		2.0f
+#define teta0_D_d 			0.2f //rad
+#define teta0_T_d 			0.0f
 
-#define B_Koeff 174.0f //kcal/mol   #define B_Koeff 91.25  //kcal/mol
+#define Nc					34				// number of coefficients
 
-#define dt          (2e-10) // s
-
-#define dt_viscPF_teta		4.34782596e-5f				//			dt_viscPF = dt/viscPF;
-#define dt_viscPF			0.000232558144f				//			dt_viscPF_teta = dt/viscPF_teta;
-
-
-#define sqrt_PF_xy 		0.016669f
-#define sqrt_PF_teta 	0.007207f
-
-#define R_MT 8.128f
-
-
-#define A_Koeff 53.0f
-#define b_lat   12.9f
-
-#define A_long_D 90.0f
-#define b_long_D 7.9f
-
-#define A_long_T 90.0f
-#define b_long_T 7.9f
-
-#define ro0       0.12f
-#define ro0_long  0.12f
-
-#define inv_ro0_long  8.3333f	// 1/ro0_long
-
-#define c_lat  0.10f
-#define d_lat  0.25f
-
-#define C_Koeff 300.0f
-#define Rad       2.0f
-
-#define inv_ro0 			8.3333f 	// = 1 / ro0;
-#define clat_dlat_ro0		6.6666f		// 		//clat_dlat_ro0   = 2*c_lat / (d_lat* ro0);
-
-#define clong_dlong_ro0		6.6666f				//clong_dlong_ro0 = 2*c_lat / (d_lat* ro0);
-
-#define 	d_lat_ro0			33.3333f		// 			d_lat_ro0 = 1 / (d_lat*ro0);
-
-
-#define		d_long_ro0			33.3333f		//			d_long_ro0 = 1 / (d_lat*ro0_long);
+#define coeffs_ddr_offset	8096			// 
 
 #define pi 3.141592653f
-
-
-#define fi_r 		1.3291395f
-#define psi_r 		1.801785f
-
-#define fi_l  		1.0856f
-#define psi_l  		-1.339725f
-#define rad_mon 	 2.0f
-
-#define teta0_D 0.2f //rad
-#define teta0_T 0.0f
-
 
 const float Ax_1[13] = {-0.165214628f, 0.0561592989f, 0.264667839f, 0.412544012f, 0.465911359f, 0.412544012f, 0.264667839f, 0.0561594106f, -0.165214419f, -0.348739684f, -0.452372819f, -0.452372819f, -0.348739684f};
 

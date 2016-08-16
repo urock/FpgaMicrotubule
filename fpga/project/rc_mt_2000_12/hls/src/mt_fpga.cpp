@@ -2,12 +2,47 @@
 
 int N_d_choose = 0;
 
+float viscPF       		= viscPF_d;       		
+float viscPF_teta  		= viscPF_teta_d;  		
+float B_Koeff 			= B_Koeff_d; 			
+float dt 				= dt_d; 				
+float dt_viscPF_teta	= dt_viscPF_teta_d;	
+float dt_viscPF			= dt_viscPF_d;			
+float sqrt_PF_xy 		= sqrt_PF_xy_d; 		
+float sqrt_PF_teta 		= sqrt_PF_teta_d; 		
+float R_MT 				= R_MT_d; 				
+float A_Koeff 			= A_Koeff_d; 			
+float b_lat   			= b_lat_d;   			
+float A_long_D 			= A_long_D_d; 			
+float b_long_D 			= b_long_D_d; 			
+float A_long_T 			= A_long_T_d; 			
+float b_long_T 			= b_long_T_d; 			
+float ro0       		= ro0_d;       		
+float ro0_long  		= ro0_long_d;  		
+float inv_ro0_long  	= inv_ro0_long_d;  	
+float c_lat  			= c_lat_d;  			
+float d_lat  			= d_lat_d;  			
+float C_Koeff 			= C_Koeff_d; 			
+float Rad       		= Rad_d;       		
+float inv_ro0 			= inv_ro0_d; 			
+float clat_dlat_ro0		= clat_dlat_ro0_d;		
+float clong_dlong_ro0	= clong_dlong_ro0_d;	
+float d_lat_ro0			= d_lat_ro0_d;			
+float d_long_ro0		= d_long_ro0_d;		
+float fi_r 				= fi_r_d; 				
+float psi_r 			= psi_r_d; 			
+float fi_l  			= fi_l_d;  			
+float psi_l  			= psi_l_d;  			
+float rad_mon 	 		= rad_mon_d; 	 		
+float teta0_D 			= teta0_D_d; 			
+float teta0_T 			= teta0_T_d; 			
+
 // hardware function
 int mt_top(
 		uint32_t InputLength,	
 		uint32_t p1,
 		uint32_t p2,
-		uint32_t offset_i,		
+		uint32_t offset_i,					// flag to load coeffs from ddr
 		uint32_t offset_o,		
 		uint32_t cp_size,		
 		volatile two_floats *bus_ptr_i,
@@ -104,6 +139,48 @@ int mt_top(
 #pragma HLS RESOURCE variable=m2 core=RAM_2P_BRAM latency=5
 
 	float_3d mc_n0, mc_n1, mc_n2;
+	
+	if (offset_i) {	// load coeffs from ddr
+	
+		memcpy(tmp_buf,(const two_floats*)(bus_ptr_i + coeffs_ddr_offset),Nc*sizeof(two_floats)/2);
+		
+		viscPF       		= tmp_buf[0].d0;
+		viscPF_teta  		= tmp_buf[0].d1;
+		B_Koeff 			= tmp_buf[1].d0;
+		dt 					= tmp_buf[1].d1;
+		dt_viscPF_teta		= tmp_buf[2].d0;
+		dt_viscPF			= tmp_buf[2].d1;
+		sqrt_PF_xy 			= tmp_buf[3].d0;
+		sqrt_PF_teta 		= tmp_buf[3].d1;
+		R_MT 				= tmp_buf[4].d0;
+		A_Koeff 			= tmp_buf[4].d1;
+		b_lat   			= tmp_buf[5].d0;
+		A_long_D 			= tmp_buf[5].d1;
+		b_long_D 			= tmp_buf[6].d0;
+		A_long_T 			= tmp_buf[6].d1;
+		b_long_T 			= tmp_buf[7].d0;
+		ro0       			= tmp_buf[7].d1;
+		ro0_long  			= tmp_buf[8].d0;
+		inv_ro0_long  		= tmp_buf[8].d1;
+		c_lat  				= tmp_buf[9].d0;
+		d_lat  				= tmp_buf[9].d1;
+		C_Koeff 			= tmp_buf[10].d0;
+		Rad       			= tmp_buf[10].d1;
+		inv_ro0 			= tmp_buf[11].d0;
+		clat_dlat_ro0		= tmp_buf[11].d1;
+		clong_dlong_ro0		= tmp_buf[12].d0;
+		d_lat_ro0			= tmp_buf[12].d1;
+		d_long_ro0			= tmp_buf[13].d0;
+		fi_r 				= tmp_buf[13].d1;
+		psi_r 				= tmp_buf[14].d0;
+		fi_l  				= tmp_buf[14].d1;
+		psi_l  				= tmp_buf[15].d0;
+		rad_mon 	 		= tmp_buf[15].d1;
+		teta0_D 			= tmp_buf[16].d0;
+		teta0_T 			= tmp_buf[16].d1;
+		
+	
+	}
 
 
 

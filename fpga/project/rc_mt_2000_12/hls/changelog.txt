@@ -1,4 +1,11 @@
-﻿﻿added heat on off. Depends on input parameter.
+﻿ver 0.23
+	load coeffs from ddr
+
+
+
+ver 0.22: 
+
+﻿added heat on off. Depends on input parameter.
 N_d=36
 mt04 Добавлено тепло 
 N_d=36

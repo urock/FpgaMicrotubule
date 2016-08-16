@@ -3,7 +3,7 @@ rem C:\Xilinx\Vivado\2014.2\bin\vivado.bat -mode batch -source create_project.tc
 rem C:\Xilinx\Vivado\2014.4\bin\vivado.bat -mode tcl -source create_project.tcl -notrace
 
 
-set vivado_bin=E:\Xilinx\Vivado_HLS\2014.4\bin\
+set vivado_bin=C:\Xilinx\Vivado_HLS\2014.4\bin\
 
 set PATH=%vivado_bin%;%PATH%;%vivado_bin%..\msys\bin
 
