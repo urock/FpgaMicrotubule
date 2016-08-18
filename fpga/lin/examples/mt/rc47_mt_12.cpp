@@ -12,6 +12,11 @@
 
 #include "rc_47.h"
 
+#include "jsoncpp/json/json-forwards.h"
+#include "jsoncpp/json/json.h"
+
+#include <fstream>
+
 
 struct pci_device pd[MAX_PCIE_DEVICES];
 struct rc47_board_t rc47[MAX_RC47_BOARDS];
@@ -159,6 +164,27 @@ int main(int argc, char *argv[])
 {
 	int dev, ret_val;
 	unsigned int reg_val;
+
+
+	printf("Test json\n");
+
+
+	Json::Value root;
+
+	std::ifstream config_doc("test.json", std::ifstream::binary);
+	config_doc >> root;	
+
+	int leng = root["my-indent"].get("length", 3).asInt();
+	float A = root.get("A", 0).asFloat();
+	float B = root.get("B", 0).asFloat();
+	int C = root.get("C", 0).asInt();
+
+	printf("json len = %d\n",leng);
+	printf("A = %f\n",A);
+	printf("B = %1.15f\n",B);
+	printf("C = %d\n",C);
+
+	return 0; 
 
 	// find and init FPGA device
 	ret_val = fpga_init(argc, argv, &dev);
