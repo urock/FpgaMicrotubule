@@ -17,7 +17,7 @@ int mt_cpu(	int		n_step,				// iieiia eiee?anoai oaaia ii a?aiaie
 			int		flag_rand_c,
 			int		flag_seed_c,
 
-			int seeds[],
+			unsigned int seeds[],
 
 			vector<vector<float> >  & x_in,		// aoiaiua ianneau eii?aeiao, eniieuco?ony i?e load_coords = 1
 			vector<vector<float> >  & y_in,
@@ -26,7 +26,7 @@ int mt_cpu(	int		n_step,				// iieiia eiee?anoai oaaia ii a?aiaie
 			vector<vector<float> >  & x_out,		// auoiaiua ianneau eii?aeiao
 			vector<vector<float> >  & y_out,
 			vector<vector<float> >  & t_out,
-			int N_d_chooseInput
+			unsigned int N_d_chooseInput
 );
 
 

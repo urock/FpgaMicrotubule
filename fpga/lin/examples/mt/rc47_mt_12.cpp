@@ -24,8 +24,8 @@ bool flag_compare, flag_rand;
 unsigned int N_d;
 
 unsigned int length;	//length of MT with counting shifts
-int NStop[13];	//numbers of last monomers;
-int NStart[13];	//numbers of first monomers;
+unsigned int NStop[13];	//numbers of last monomers;
+unsigned int NStart[13];	//numbers of first monomers;
 
 int flag_seed = 1;
 
@@ -44,13 +44,13 @@ vector<vector<float> > x_2;
 vector<vector<float> > y_2;
 vector<vector<float> > t_2;
 
-vector<vector<float> > type_mol;	//types
+vector<vector<int> > type_mol;	//types
 
-int seeds[NUM_SEEDS];
+unsigned int seeds[NUM_SEEDS];
 
 //#define TEST_SEEDS	
 
-const int test_seeds[NUM_SEEDS] = {	0x10000000, 0x20000000, 0x30000000, 0x40000000, 0x50000000, 
+const unsigned int test_seeds[NUM_SEEDS] = {	0x10000000, 0x20000000, 0x30000000, 0x40000000, 0x50000000, 
 									0x60000000, 0x70000000, 0x80000000, 0x90000000, 0xA0000000  };
 
 
@@ -168,7 +168,6 @@ int main(int argc, char *argv[])
 	double dt_f[N];
 	printf("N_d is %d\n",N_d);
 	
-	printf("N_d is %d\n",N_d);
 	
 	printf("size is %d\n",(int)SIZE_DWORD);
 	
@@ -238,18 +237,6 @@ int main(int argc, char *argv[])
 	
 
 
-
-	/*
-	* в этом цикле проводим вычисления и сравниваем результаты
-	*
-	* в данный момент чтобы проверить сравнение на каждом шаге вызывается функция mt_cpu
-	* с параметром load_coords = 1 (иначе состояния глобальных массивов координат будет все время меняться)
-	*
-	* Когда вместо mt_cpu будет реализация на OpenCL, то надо делать по-другому:
-	*  перед циклом один раз вызываем mt_cpu (load_coords = 1), в цикле уменьшаем количество итераций на 1 и
-	*  вызываем mt_cpu (load_coords = 0)
-	*
-	*/
 	error = 0; 
 
 	
@@ -264,7 +251,7 @@ int main(int argc, char *argv[])
 #ifdef TEST_SEEDS
 				seeds[i] = test_seeds[i];
 #else
-				seeds[i]=rand();
+				seeds[i]=(unsigned int)rand();
 #endif
 			unsigned int addr = SEED_REG + 4*i;
 			RD_WriteDeviceReg32m(dev, CNTRL_BAR, addr, seeds[i]);	
@@ -295,14 +282,16 @@ int main(int argc, char *argv[])
 	
 	printf("\n\nhereerereerere\n\n");
 
-	int temp = 0;
 	for(int k=0; k<N; k++) {
 
 		int err;
 		struct timeval tt1, tt2;
-		if (flag_compare==1){
+		if (flag_compare==1) {
 			get_time(&tt1);
-			if (mt_cpu(STEPS_TO_WRITE,1, flag_rand, flag_seed, seeds,  x_1,y_1,t_1,x_1,y_1, t_1, N_d)<0) { printf("Nan Error in cpu. Step is %d. Exitting....\n",k); break;}
+			if (mt_cpu(STEPS_TO_WRITE,1, flag_rand, flag_seed, seeds,  x_1,y_1,t_1,x_1,y_1, t_1, N_d)<0) { 
+				printf("Nan Error in cpu. Step is %d. Exitting....\n",k); 
+				break;
+			}
 
 			get_time(&tt2);
 			calc_dt(&tt1,&tt2, &dt_c[k]);
@@ -340,7 +329,7 @@ int main(int argc, char *argv[])
 		//printf("y_2[0][] = %f\n", y_2[0][temp]);
 		//removeDimer(temp, x_2,y_2,t_2);
 		//printf("N[5] = %i, max = %i, min = %i, y = %fy = %fy = %fy = %fy = %f\n", NStop[5], max_N(NStop), min_N(NStop), y_2[1][0], y_2[1][1], y_2[1][2], y_2[1][3], y_2[1][4], y_2[1][5]);
-		int i = 10, j = 34, j1;
+		unsigned int i = 10, j = 34, j1;
 		
 		
 		/*
@@ -382,7 +371,7 @@ int main(int argc, char *argv[])
 		if (flag_compare==1)	print_coords(f_p, x_1, y_1, t_1);
 		print_coords(f_p1, x_2, y_2, t_2);
 		print_coords_type(f_type, type_mol);
-		float x_avg, y_avg = 0;;
+		float y_avg = 0;;
 		for (i = 0; i < 13; i++) {
 			y_avg += y_2[i][NStop[i]-1];
 		}
@@ -428,46 +417,46 @@ int main(int argc, char *argv[])
 
 
 int mt_fpga(	int 	dev,
-int		n_step,				// полное количество шагов по времени
-int 	load_coords,		//
-//int seeds[],
+				int		n_step,				// 
+				int 	load_coords,		//
+				//int seeds[],
 
-vector<vector<float> >  & x_in,
-vector<vector<float> >  & y_in,
-vector<vector<float> >  & t_in,
+				vector<vector<float> >  & x_in,
+				vector<vector<float> >  & y_in,
+				vector<vector<float> >  & t_in,
 
-vector<vector<float> >  & x_out,
-vector<vector<float> >  & y_out,
-vector<vector<float> >  & t_out
+				vector<vector<float> >  & x_out,
+				vector<vector<float> >  & y_out,
+				vector<vector<float> >  & t_out
 ) 
 {
-return -1;	
+	return -1;	
 }
 
 
 int mt_fpga1(	int 	dev,
-int		n_step,				//time steps to run
-int 	load_coords,		//
-//int seeds[],
+				int		n_step,				//time steps to run
+				int 	load_coords,		//
+				//int seeds[],
 
-vector<vector<float> >  & x_in,
-vector<vector<float> >  & y_in,
-vector<vector<float> >  & t_in,
+				vector<vector<float> >  & x_in,
+				vector<vector<float> >  & y_in,
+				vector<vector<float> >  & t_in,
 
-vector<vector<float> >  & x_out,
-vector<vector<float> >  & y_out,
-vector<vector<float> >  & t_out,
-vector<vector<float> > & type_mol
-) 
+				vector<vector<float> >  & x_out,
+				vector<vector<float> >  & y_out,
+				vector<vector<float> >  & t_out,
+				vector<vector<int> > & type_mol
+			) 
 {	
 
 	two_floats tmp; 
 	two_floats w0, w1;
 	
 	unsigned int reg_val; 
-	
-	
-	int i,j, cnt, hls_done;
+	unsigned int i,j; 
+
+	int cnt, hls_done;
 	
 	int k = 0; // ddr buffer index
 	
@@ -508,38 +497,17 @@ vector<vector<float> > & type_mol
 	
 	int p2 = 0;
 	switch(N_d) {
-		case 12:
-			p2 = 0;
-			break;
-		case 24:
-			p2 = 1;
-			break;
-		case 36:
-			p2 = 2;
-			break;
-		case 48:
-			p2 = 3;
-			break;
-		case 60:
-			p2 = 4;
-			break;
-		case 72:
-			p2 = 5;
-			break;
-		case 84:
-			p2 = 6;
-			break;
-		case 108:
-			p2 = 7;
-			break;
-		case 156:
-			p2 = 8;
-			break;
-		case 216:
-			p2 = 9;
-			break;
-		default:
-			p2 = 2;	
+		case 12: p2 = 0; break;
+		case 24: p2 = 1; break;
+		case 36: p2 = 2; break;
+		case 48: p2 = 3; break;
+		case 60: p2 = 4; break;
+		case 72: p2 = 5; break;
+		case 84: p2 = 6; break;
+		case 108: p2 = 7; break;
+		case 156: p2 = 8; break;
+		case 216: p2 = 9; break;
+		default: p2 = 2;	
 	}
 	
 	RD_WriteDeviceReg32m(dev, CNTRL_BAR, HLS_B, p2);
@@ -837,7 +805,7 @@ void print_usage(char *argv[])
 
 void print_coords(FILE *f_p, vector<vector<float> >  &  x, vector<vector<float> >  &  y, vector<vector<float> >  &  t)
 {
-unsigned	int i,j;
+	unsigned int i,j;
 
 	for (i=0; i<13; i++) {
 		for (j=0; j<N_d; j++)
@@ -855,14 +823,14 @@ unsigned	int i,j;
 
 }
 
-void print_coords_type(FILE *f_p, vector<vector<float> > &type_mol)
+void print_coords_type(FILE *f_p, vector<vector<int> > &type_mol)
 {
-unsigned	int i,j;
+	unsigned int i,j;
 
 	for (i=0; i<13; i++) {
 		
 		for (j=0; j<N_d; j++)
-		fprintf(f_p,"%i\f  ", type_mol[i][j]);
+		fprintf(f_p,"%i\t  ", type_mol[i][j]);
 	}
 
 	fprintf(f_p,"\n");
@@ -874,7 +842,7 @@ unsigned	int i,j;
 
 void init_coords(vector<vector<float> >  &  x, vector<vector<float> >  &  y, vector<vector<float> >  &  t)
 {
-	int i,j;
+	unsigned int i,j;
 
 
 	// задание y координаты для нижней спирали
@@ -938,10 +906,10 @@ void init_coords(vector<vector<float> >  &  x, vector<vector<float> >  &  y, vec
 int compare_results(vector<vector<float> >  & x_1, vector<vector<float> >  & y_1, vector<vector<float> >  & t_1,
 vector<vector<float> >  &  x_2, vector<vector<float> >  & y_2, vector<vector<float> >  & t_2 )
 {
-
+	unsigned int i,j;
 	int error = 0;
-	for(int i = 0; i<13; i++)
-	for(int j = 0; j<N_d; j++) {
+	for(i = 0; i<13; i++)
+	for(j = 0; j<N_d; j++) {
 
 		if ((x_1[i][j]!=x_1[i][j])||(x_2[i][j]!=x_2[i][j])||(!equal(x_1[i][j], x_2[i][j])))
 		error++;
@@ -983,18 +951,18 @@ float getDistance(float x1, float y1, float t1, float x2, float y2, float t2) {
 	return r_long;
 }
 
-int max_N(int N_arr[13]) {
+unsigned int max_N(unsigned int N_arr[13]) {
 	int i;
-	int NMax = 0;
+	unsigned int NMax = 0;
 	for (i = 0; i<13; i++)
 		if (NMax < N_arr[i]) 
 			NMax = N_arr[i];
 	return NMax;
 }
 
-int min_N(int N_arr[13]) {
+unsigned int min_N(unsigned int N_arr[13]) {
 	int i;
-	int NMin = N_arr[0];
+	unsigned int NMin = N_arr[0];
 	for (i = 0; i < 13; i++)
 		if (NMin > N_arr[i]) 
 			NMin = N_arr[i];
@@ -1002,7 +970,7 @@ int min_N(int N_arr[13]) {
 }
 
 void choose_to_shift_coords(vector<vector<float> >  &  x, vector<vector<float> >  &  y, vector<vector<float> >  &  t) {
-	int NStopMax = max_N(NStop), NStopMin = min_N(NStop);
+	unsigned int NStopMax = max_N(NStop), NStopMin = min_N(NStop);
 	/*
 	if (NStopMax >= N_d - 5 && NStopMin <= 16) {	//Error
 		printf("Error!!! NStopMax >= N_d - 5 && NStopMin <= 16 N_d = %i \n", N_d);
@@ -1045,7 +1013,7 @@ void choose_to_shift_coords(vector<vector<float> >  &  x, vector<vector<float> >
 
 void shift_coords(vector<vector<float> >  &  x, vector<vector<float> >  &  y, vector<vector<float> >  &  t, bool up, const int shift)
 {
-	int i,j;
+	unsigned int i,j;
 	
 	if (up) {
 		for (i=0; i<13; i++){
@@ -1125,7 +1093,7 @@ void polimerization_algorithm(vector<vector<float> >  &  x, vector<vector<float>
 	srand((unsigned) time(NULL));
 	unsigned long InitRnd = (t1-(int)t1)*1e+10 + rand();	
 	Random Rnd_pol(InitRnd*1.7 + 0.35*rand());
-	int i, j;
+	unsigned int i, j;
 	float gen_rand;
 	for(i = 0; i < 13; i++) {
 		gen_rand = Rnd_pol.genrand_real2();

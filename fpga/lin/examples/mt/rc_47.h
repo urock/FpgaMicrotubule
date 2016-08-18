@@ -35,7 +35,7 @@ vector<vector<float> >  & x_2, vector<vector<float> >  & y_2, vector<vector<floa
 void calc_dt(struct timeval *tt1, struct timeval *tt2, double *tsec);						
 
 void print_coords(FILE *f_p, vector<vector<float> >  & x, vector<vector<float> >  & y, vector<vector<float> >  & t);
-void print_coords_type(FILE *f_p, vector<vector<float> > &type_mol);
+void print_coords_type(FILE *f_p, vector<vector<int> > &type_mol);
 
 
 int mt_fpga(	int 	dev,
@@ -64,7 +64,7 @@ vector<vector<float> >  & t_in,
 vector<vector<float> >  & x_out,
 vector<vector<float> >  & y_out,
 vector<vector<float> >  & t_out,
-vector<vector<float> > &type_mol
+vector<vector<int> > &type_mol
 ) ; 
 
 

@@ -31,7 +31,7 @@ vector<vector<float> > long_d_t;//[13][N_d+1];
 
 int run_step_c(int flag_rand_c);
 
-int N_d_choose = 0;
+unsigned int N_d_choose = 0;
 
 
 class uni_num {
@@ -46,10 +46,10 @@ public:
 //		valid = false;
 //	};
 	float get_uni_num(void);
-	void init_genrand(unsigned long seed);
+	void init_genrand(unsigned int seed);
 
 
-	unsigned long mt[N_period]; /* the array for the state vector  */
+	unsigned int mt[N_period]; /* the array for the state vector  */
 	int mti;
 
 };
@@ -58,7 +58,7 @@ public:
 
 
 
-void uni_num::init_genrand(unsigned long seed)
+void uni_num::init_genrand(unsigned int seed)
 {
     mt[0]= seed & 0xffffffffUL;
     for (mti=1; mti<N_period; mti++) {
@@ -73,8 +73,8 @@ void uni_num::init_genrand(unsigned long seed)
 
 float uni_num::get_uni_num()
 {
-    unsigned long y;
-    static unsigned long mag01[2]={0x0UL, MATRIX_A};
+    unsigned int y;
+    static unsigned int mag01[2]={0x0UL, MATRIX_A};
     /* mag01[x] = x * MATRIX_A  for x=0,1 */
 
     if (mti >= N_period) { /* generate N_period words at one time */
@@ -161,41 +161,41 @@ int get_norm_vals(int index, float *n0, float *n1) {
 
 
 
-void calc_grad_c(		int i1, 		// i index i?aaie iieaeoeu
-int j1,			// j index i?aaie iieaeoeu
+void calc_grad_c(		unsigned int i1, 		// i index i?aaie iieaeoeu
+						unsigned int j1,			// j index i?aaie iieaeoeu
 
-int i2,			// i index eaaie iieaeoeu
+						unsigned int i2,			// i index eaaie iieaeoeu
 
-bit type, 		// dimer type: 0 - 'D', 1 - 'T'
-bit pos,		// monomer position in dimer: 0 - bottom, 1 - top
+						bit type, 		// dimer type: 0 - 'D', 1 - 'T'
+						bit pos,		// monomer position in dimer: 0 - bottom, 1 - top
 
-float x_1,		// i?aaay iieaeoea		mol1
-float y_1,
-float teta_1,
+						float x_1,		// i?aaay iieaeoea		mol1
+						float y_1,
+						float teta_1,
 
-float x_2,		// eaaay iieaeoea		mol2
-float y_2,
-float teta_2,
+						float x_2,		// eaaay iieaeoea		mol2
+						float y_2,
+						float teta_2,
 
-float x_3,		// aa?oiyy iieaeoea 	mol3
-float y_3,
-float teta_3,
+						float x_3,		// aa?oiyy iieaeoea 	mol3
+						float y_3,
+						float teta_3,
 
-float *grad_lat_x_1,			// left component of mol1
-float *grad_lat_y_1,
-float *grad_lat_teta_1,
+						float *grad_lat_x_1,			// left component of mol1
+						float *grad_lat_y_1,
+						float *grad_lat_teta_1,
 
-float *grad_lat_x_2,			// right component of mol2
-float *grad_lat_y_2,
-float *grad_lat_teta_2,
+						float *grad_lat_x_2,			// right component of mol2
+						float *grad_lat_y_2,
+						float *grad_lat_teta_2,
 
-float *grad_long_x_1,			// up component of mol1
-float *grad_long_y_1,
-float *grad_long_teta_1,
+						float *grad_long_x_1,			// up component of mol1
+						float *grad_long_y_1,
+						float *grad_long_teta_1,
 
-float *grad_long_x_3,			// down component of mol3
-float *grad_long_y_3,
-float *grad_long_teta_3
+						float *grad_long_x_3,			// down component of mol3
+						float *grad_long_y_3,
+						float *grad_long_teta_3
 
 );
 
@@ -216,7 +216,7 @@ int mt_cpu(	int		n_step,				// iieiia eiee?anoai oaaia ii a?aiaie
 			int		flag_rand_c,
 			int		flag_seed_c,
 
-			int seeds[],
+			unsigned int seeds[],
 
 			vector<vector<float> >  & x_in,		// aoiaiua ianneau eii?aeiao, eniieuco?ony i?e load_coords = 1
 			vector<vector<float> >  & y_in,
@@ -225,7 +225,7 @@ int mt_cpu(	int		n_step,				// iieiia eiee?anoai oaaia ii a?aiaie
 			vector<vector<float> >  & x_out,		// auoiaiua ianneau eii?aeiao
 			vector<vector<float> >  & y_out,
 			vector<vector<float> >  & t_out,
-			int N_d_chooseInput
+			unsigned int N_d_chooseInput
 )
 
 {
@@ -366,8 +366,8 @@ int run_step_c(int flag_rand_c)
 			// nie?aeu cae?o?eaaaony iaeaai aaa?o
 			// iiyoiio iiiiia? 12 IO neaaa acaeiiaaenoaoao n iiiiia?ii ia ec naiaai ?yaa, a ec a?oaiai - ni naaeaii ia 3 ?yaa.
 			// o.a. iieaeoea (0,12) neaaa acaeiiaaenoaoao n (3,0); (1,12) - (4,0) e oa
-			int i2 = (i==12)? 0 : (i+1);
-			int j2 = (i==12)? (j+3) : j;
+			unsigned int i2 = (i==12)? 0 : (i+1);
+			unsigned int j2 = (i==12)? (j+3) : j;
 
 			calc_grad_c(i, j, i2, type[i][j],  pos,
 
@@ -496,41 +496,41 @@ return 0;
 
 
 
-void calc_grad_c(		int i1, 		// i index i?aaie iieaeoeu
-int j1,			// j index i?aaie iieaeoeu
+void calc_grad_c(		unsigned int i1, 		// i index i?aaie iieaeoeu
+						unsigned int j1,			// j index i?aaie iieaeoeu
 
-int i2,			// i index eaaie iieaeoeu
+						unsigned int i2,			// i index eaaie iieaeoeu
 
-bit type, 		// dimer type: 0 - 'D', 1 - 'T'
-bit pos,		// monomer position in dimer: 0 - bottom, 1 - top
+						bit type, 		// dimer type: 0 - 'D', 1 - 'T'
+						bit pos,		// monomer position in dimer: 0 - bottom, 1 - top
 
-float x_1,		// i?aaay iieaeoea		mol1
-float y_1,
-float teta_1,
+						float x_1,		// i?aaay iieaeoea		mol1
+						float y_1,
+						float teta_1,
 
-float x_2,		// eaaay iieaeoea		mol2
-float y_2,
-float teta_2,
+						float x_2,		// eaaay iieaeoea		mol2
+						float y_2,
+						float teta_2,
 
-float x_3,		// aa?oiyy iieaeoea 	mol3
-float y_3,
-float teta_3,
+						float x_3,		// aa?oiyy iieaeoea 	mol3
+						float y_3,
+						float teta_3,
 
-float *grad_lat_x_1,			// left component of mol1
-float *grad_lat_y_1,
-float *grad_lat_teta_1,
+						float *grad_lat_x_1,			// left component of mol1
+						float *grad_lat_y_1,
+						float *grad_lat_teta_1,
 
-float *grad_lat_x_2,			// right component of mol2
-float *grad_lat_y_2,
-float *grad_lat_teta_2,
+						float *grad_lat_x_2,			// right component of mol2
+						float *grad_lat_y_2,
+						float *grad_lat_teta_2,
 
-float *grad_long_x_1,			// up component of mol1
-float *grad_long_y_1,
-float *grad_long_teta_1,
+						float *grad_long_x_1,			// up component of mol1
+						float *grad_long_y_1,
+						float *grad_long_teta_1,
 
-float *grad_long_x_3,			// down component of mol3
-float *grad_long_y_3,
-float *grad_long_teta_3
+						float *grad_long_x_3,			// down component of mol3
+						float *grad_long_y_3,
+						float *grad_long_teta_3
 
 )
 
