@@ -183,7 +183,8 @@ int main(int argc, char *argv[])
 	printf("A = %f\n",A);
 	printf("B = %1.15f\n",B);
 	printf("C = %d\n",C);
-
+	printf("C = %d\n",C);
+	
 	return 0; 
 
 	// find and init FPGA device
