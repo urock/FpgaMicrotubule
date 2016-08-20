@@ -12,18 +12,18 @@ using std::vector;
 
 
 
-int mt_cpu(	int		n_step,				// iieiia eiee?anoai oaaia ii a?aiaie
+int mt_cpu(	int		n_step,				// 
 			int 	load_coords,		//
 			int		flag_rand_c,
 			int		flag_seed_c,
 
 			unsigned int seeds[],
 
-			vector<vector<float> >  & x_in,		// aoiaiua ianneau eii?aeiao, eniieuco?ony i?e load_coords = 1
+			vector<vector<float> >  & x_in,		// 
 			vector<vector<float> >  & y_in,
 			vector<vector<float> >  & t_in,
 
-			vector<vector<float> >  & x_out,		// auoiaiua ianneau eii?aeiao
+			vector<vector<float> >  & x_out,		// 
 			vector<vector<float> >  & y_out,
 			vector<vector<float> >  & t_out,
 			unsigned int N_d_chooseInput

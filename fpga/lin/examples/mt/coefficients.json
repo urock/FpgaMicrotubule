@@ -1,0 +1,48 @@
+// Configuration options
+{
+    "use_json": true, 
+
+    // comments can start at new line
+    "A" : 0.456,
+    // csdfsd 
+    "B" : 4.34782596e-5,
+    "C" : -23,
+
+    // (kcal/mol)*(s/nm^2)
+   "viscPF"          :     8.6e-7,     
+   // (kcal/mol)*s   
+   "viscPF_teta"     :     4.6e-6,        
+   "B_Koeff"         :     174.0,  
+   "dt"              :     2e-10, // s
+   "dt_viscPF_teta"  :     4.34782596e-5,           //       dt_viscPF = dt/viscPF;
+   "dt_viscPF"       :     0.000232558144,            //       dt_viscPF_teta = dt/viscPF_teta;
+   "sqrt_PF_xy"      :     0.016669,
+   "sqrt_PF_teta"    :     0.007207,
+   "R_MT"            :     8.128,
+   "A_Koeff"         :     53.0,
+   "b_lat"           :     12.9,
+   "A_long_D"        :     90.0,
+   "b_long_D"        :     7.9,
+   "A_long_T"        :     90.0,
+   "b_long_T"        :     7.9,
+   "ro0"             :     0.12,
+   "ro0_long"        :     0.12,
+   "inv_ro0_long"    :     8.3333,  // 1/ro0_long
+   "c_lat"           :     0.10,
+   "d_lat"           :     0.25,
+   "C_Koeff"         :     300.0,
+   "Rad"             :     2.0,
+   "inv_ro0"         :     8.3333,  // = 1 / ro0;
+   "clat_dlat_ro0"   :     6.6666,     //       //clat_dlat_ro0   = 2*c_lat / (d_lat* ro0);
+   "clong_dlong_ro0" :     6.6666,           //clong_dlong_ro0 = 2*c_lat / (d_lat* ro0);
+   "d_lat_ro0"       :     33.3333,    //          d_lat_ro0 = 1 / (d_lat*ro0);
+   "d_long_ro0"      :     33.3333,    //       d_long_ro0 = 1 / (d_lat*ro0_long);
+   "fi_r"            :     1.3291395,
+   "psi_r"           :     1.801785,
+   "fi_l"            :     1.0856,
+   "psi_l"           :     -1.339725,
+   "rad_mon"         :     2.0,
+   "teta0_D"         :     0.2, //rad
+   "teta0_T"         :     0.0    
+
+}

@@ -10,10 +10,11 @@
         "ruby"
         ],
 
+    // comments can start at new line
     "A" : 0.456,
     "B" : 4.34782596e-5,
     "C" : -23,
 
     // Tab indent size
-    "my-indent" : { "length" : 3, "use_space": true }
+    "my-indent" : { "length" : 3,  }
 }

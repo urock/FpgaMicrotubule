@@ -29,6 +29,43 @@ vector<vector<float> > long_d_y;//[13][N_d+1];
 vector<vector<float> > long_d_t;//[13][N_d+1];
 
 
+// coefficients
+extern float viscPF;       		
+extern float viscPF_teta;  		
+extern float B_Koeff;			
+extern float dt;		
+extern float dt_viscPF_teta;
+extern float dt_viscPF;			
+extern float sqrt_PF_xy; 		
+extern float sqrt_PF_teta; 		
+extern float R_MT; 				
+extern float A_Koeff;			
+extern float b_lat;   			
+extern float A_long_D; 			
+extern float b_long_D; 			
+extern float A_long_T; 			
+extern float b_long_T; 			
+extern float ro0;       	
+extern float ro0_long; 	
+extern float inv_ro0_long; 
+extern float c_lat;  			
+extern float d_lat;  			
+extern float C_Koeff; 			
+extern float Rad;       	
+extern float inv_ro0; 			
+extern float clat_dlat_ro0;	
+extern float clong_dlong_ro0;	
+extern float d_lat_ro0;			
+extern float d_long_ro0;	
+extern float fi_r; 				
+extern float psi_r; 		
+extern float fi_l;  		
+extern float psi_l;  			
+extern float rad_mon; 	 		
+extern float teta0_D; 			
+extern float teta0_T;		
+
+
 int run_step_c(int flag_rand_c);
 
 unsigned int N_d_choose = 0;
