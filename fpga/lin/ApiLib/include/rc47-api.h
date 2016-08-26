@@ -28,7 +28,7 @@
 
 #define Time(tt) gettimeofday(&tt,NULL)
 
-#define MAX_RC47_BOARDS		12
+#define MAX_RC47_BOARDS		4
 
 // Virtex7 registers
 #define CNTRL_BAR 			0

@@ -12,6 +12,8 @@
 
 #include "rc_47.h"
 #include "rand.h"
+#include "fpga.h"
+
 
 #include "jsoncpp/json/json-forwards.h"
 #include "jsoncpp/json/json.h"
@@ -194,83 +196,15 @@ void print_usage(char *argv[])
 {
    printf("Usage:\n");
    printf("\n--------------------------------------------------------------------------\n");
-   printf("To run HLS TEST:\nsudo %s -b [board] -v [chip_select] -N [N_d] [-compare/ ] [-rand/ ] [-file output file name]\n", argv[0]);   
-   printf("chip_select: C0 or C1 or C2 or C3\n");
+   printf("To run HLS TEST:\nsudo %s -b board -v chip_select -N N_d -c=flag_compare -r=flar_rand -f output file name]\n", argv[0]);   
+   printf("board: 0-1\n");
+   printf("chip_select: 0-3\n");
    printf("N_d: number of molecules in one filament\n");
-   printf("-compare to compare CPU and FPGA results\n");
-   printf("-rand to run CPU test with randomness\n");
-   printf("-file: if set uses this file to output\n");
    printf("\n--------------------------------------------------------------------------\n");
 }
 
 
-                           //##########################command line parser#####################################################
-int process_cmd_line(int argc, char *argv[], struct cmd_params_t *cmd_p)
-{
-   int i;
-   unsigned int board;
 
-   int got_brd=0, got_v7=0, got_N_d=0;
-   for (i=0;i<argc; i++) {
-      
-      if ((strlen(argv[i])>=6) && !strncmp("--help",argv[i],6) ){
-         print_usage(argv);
-         return -2;
-      }
-      
-      if ((strlen(argv[i])>=5) && !strncmp("-file",argv[i],5) ){
-         flag_file=1;
-         out_file = argv[i+1];
-      }  
-
-      if ((strlen(argv[i])>=8) && !strncmp("-compare",argv[i],8) ){
-         flag_compare=1;
-      }  
-      
-      if ((strlen(argv[i])>=4) && !strncmp("-rand",argv[i],5) ){
-         flag_rand=1;
-         
-         printf("=====================================================================================\n");
-      }
-
-      if ((strlen(argv[i])>=2) && !strncmp("-N",argv[i],5) ){
-         sscanf(argv[i+1],"%d",&N_d);
-         got_N_d=1;
-      }     
-      
-      if ((strlen(argv[i])>=2)&& !strncmp("-b",argv[i],2)) {
-         if (i!=(argc-1) && sscanf(argv[i+1],"%d",&board)>0){
-            cmd_p->board = board;
-            got_brd = 1;
-         }
-      }
-      
-      if ((strlen(argv[i])>=2)&& !strncmp("-v",argv[i],2)) {
-         if (i <argc && (strlen(argv[i+1])>=2)&& !strncmp("C0",argv[i+1],2)) {
-            cmd_p->v7 = CS_C0; got_v7 = 1; 
-         } else if (i <argc  && (strlen(argv[i+1])>=2)&&  !strncmp("C1",argv[i+1],2)) {
-            cmd_p->v7 = CS_C1;  got_v7 = 1;
-         } else if (i <argc  && (strlen(argv[i+1])>=2)&&  !strncmp("C2",argv[i+1],2)) {
-            cmd_p->v7 = CS_C2; got_v7 = 1;
-         } else if (i <argc && (strlen(argv[i+1])>=2)&&  !strncmp("C3",argv[i+1],2)) {
-            cmd_p->v7 = CS_C3;  got_v7 = 1; 
-            
-         }
-
-      }
-      
-   }
-
-   /////////////////////////////////////////////////////    
-   if (got_brd && got_v7&&got_N_d){
-      return 0;
-   }
-   else{
-      printf("\n %s: missing or invalid operand\n Try 'sudo %s --help' for more information\n\n", argv[0], argv[0]);
-      return -1;
-   }
-
-}
 
 int main(int argc, char *argv[])
 {
@@ -292,12 +226,26 @@ int main(int argc, char *argv[])
      }
    }
 
-   cout << "board -> " << fpga_board << endl;
-   cout << "fpga_chip -> " << fpga_chip << endl;
-   cout << "N_d -> " << N_d << endl;
-   cout << "coord_out_file -> " << coord_out_file << endl;
-   cout << "flag_compare -> " << flag_compare << endl;
-   cout << "flag_rand -> " << flag_rand << endl;
+   FpgaDev Fpga;
+
+   if (Fpga.FindDevices() < 0) {
+      cerr << "Error in FindDevices\n";
+      return -1;
+   }
+
+
+   dev = Fpga.open(fpga_board, fpga_chip);
+
+   if (dev == -1) {
+      cerr << "Error in Fpga Open Device\n";
+      return -1;      
+   }
+ 
+   if (Fpga.close(dev) < 0) {
+       cerr << "Error in Fpga Close Device\n";
+      return -1;         
+   }
+
 
 
    return 0;
@@ -307,13 +255,7 @@ int main(int argc, char *argv[])
       return -1; 
    }
 
-
-   // find and init FPGA device
-   if (fpga_init(argc, argv, &dev) < 0) {
-      printf("Error in fpga_init\n");
-      return -2;
-   }
-   
+ 
 
     
 
@@ -806,126 +748,6 @@ printf("hls done cnt = %d, reg_val = 0x%x\n",cnt, reg_val);
 
 
    
-
-
-
-int fpga_init(int argc, char *argv[], int *dev_out) {
-   
-   int k, r;
-   struct cmd_params_t  cmd_p;
-   
-   unsigned int reg_val;
-   
-   flag_compare=0;
-   flag_rand=0;
-   flag_file = 0; 
-
-   if (process_cmd_line(argc, argv, &cmd_p) < 0) {
-      return -1;
-   }
-
-   printf("\nSearching for RC47 boards\n");
-
-   k = rc47_search_for_boards(pd,rc47);
-
-   if (k<0) {
-      fprintf (stderr,"No boards in system!\n\n");
-      return 0;
-   } else 
-   if (k==1)      
-   printf("Found %d board\n",k);
-   else
-   printf("Found %d boards\n",k);
-
-
-   rc47_print_device_info(k,rc47);
-
-
-   if (cmd_p.board >= k) {
-      fprintf (stderr,"Invalid selected board number\n");
-      return -2;
-   } else {
-      printf("\nSelected:\n");
-      printf("Board number\t:::\t%d\n", cmd_p.board);
-   }
-
-
-
-   if ((cmd_p.v7 == CS_C0) && (rc47[cmd_p.board].LD_pd != NULL)) {
-      pd_ptr = rc47[cmd_p.board].LD_pd;
-      printf("Virtex Chip\t:::\t%s\n", "C0");
-   } else if ((cmd_p.v7 == CS_C1) && (rc47[cmd_p.board].LU_pd != NULL)) {
-      pd_ptr = rc47[cmd_p.board].LU_pd;
-      printf("Virtex Chip\t:::\t%s\n", "C1");
-   } else if ((cmd_p.v7 == CS_C2) && (rc47[cmd_p.board].RD_pd != NULL)) {
-      pd_ptr = rc47[cmd_p.board].RD_pd;
-      printf("Virtex Chip\t:::\t%s\n", "C2");
-   } else if ((cmd_p.v7 == CS_C3) && (rc47[cmd_p.board].RU_pd != NULL)) {
-      pd_ptr = rc47[cmd_p.board].RU_pd;
-      printf("Virtex Chip\t:::\t%s\n", "C3");
-   } else {
-      fprintf (stderr,"Invalid selected virtex chip\n");
-      return -2;
-   }
-
-
-
-
-   // open pcie device
-
-   do_and_test(RD_OpenDevice,(pd_ptr));      
-
-   int dev = pd_ptr->intfd;
-
-
-   // reset user part
-   if (fpga_user_reset(dev) < 0)
-   return -1;
-   
-   if (fpga_release_user_reset(dev) < 0) 
-   return -1;     
-
-   if (fpga_wait_for_ddr_init(dev) < 0)
-   return -1;
-   else
-   printf("Init DDR OK!\n"); 
-   
-   
-   // set interconnection 
-   RD_ReadDeviceReg32m(dev, CNTRL_BAR, 0x4, reg_val);
-   
-   reg_val |= (1<<5);
-   
-   RD_WriteDeviceReg32m(dev, CNTRL_BAR, 0x4, reg_val);
-   
-
-
-
-   /////////////////////////////////////set all counters to zero///////////////////
-   
-   RD_WriteDeviceReg32m(dev, CNTRL_BAR, MasterMemRdTotalCnt, 0);
-   RD_WriteDeviceReg32m(dev, CNTRL_BAR, FifoMemRdTotalCnt, 0);
-   RD_WriteDeviceReg32m(dev, CNTRL_BAR, FifoMemWrTotalCnt, 0);
-   RD_WriteDeviceReg32m(dev, CNTRL_BAR, MasterMemWrTotalCnt, 0);
-   
-   ///////////////////////////////////////////////////////////////////////////////
-   
-   *dev_out = dev; 
-   
-
-   if (create_page_alligned_buffer(SIZE_BYTE, &wr_buf, &wr_buf_free)) {
-      fprintf (stderr,"Error memory allocation for wr_buf\n");
-      return -1;
-   }
-
-   if (create_page_alligned_buffer(SIZE_BYTE, &rd_buf, &rd_buf_free)) {
-      fprintf (stderr,"Error memory allocation for rd_buf\n");
-      return -1;
-   }  
-
-   return 0;
-}
-
 
 
 

@@ -13,12 +13,10 @@
 
 #define SEED_REG 0x170
 
-#define SIZE_DWORD  0x80*(int)(((2*N_d*13+(NUM_SEEDS)/2)/(float)0x80+1)) // размер  передаваемых данных  в fpga_write_to_axi  должен быть кратен 1024 байтам (=128=0x80 двойных слов)
+#define SIZE_DWORD  0x80*(int)(((2*N_d*13+(NUM_SEEDS)/2)/(float)0x80+1)) 
 #define SIZE_BYTE		8*SIZE_DWORD	
 
 #define coeffs_ddr_offset 8096
-
-// во время дебага TOTAL_STEPS можно делать меньше
 
 
 

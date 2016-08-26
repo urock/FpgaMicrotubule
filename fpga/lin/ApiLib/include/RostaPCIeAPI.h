@@ -37,7 +37,7 @@
 
 
 #define MAX_PCIE_DEVICES	128
-#define MAX_RC47_BOARDS		12
+// #define MAX_RC47_BOARDS		12
 
 
 #define MAX_DMA_TRANSFER_LENGTH		0x400000		// 4 MB
