@@ -11,11 +11,17 @@
 #include "rc47-api.h"
 
 #include "rc_47.h"
+#include "rand.h"
 
 #include "jsoncpp/json/json-forwards.h"
 #include "jsoncpp/json/json.h"
 
 #include <fstream>
+#include <iostream>
+#include <string>  
+
+using namespace std;
+using namespace microtubule;
 
 
 struct pci_device pd[MAX_PCIE_DEVICES];
@@ -25,8 +31,7 @@ struct pci_device *pd_ptr;
 unsigned int   *wr_buf, *wr_buf_free;
 unsigned int   *rd_buf, *rd_buf_free;
 
-bool flag_compare, flag_rand;
-unsigned int N_d;
+
 
 unsigned int length; //length of MT with counting shifts
 unsigned int NStop[13]; //numbers of last monomers;
@@ -34,10 +39,6 @@ unsigned int NStart[13];   //numbers of first monomers;
 
 int flag_seed = 1;
 
-
-
-char *out_file;
-int flag_file = 0; 
 
 // coefficients
 float viscPF            = viscPF_d;             
@@ -172,98 +173,134 @@ const unsigned int test_seeds[NUM_SEEDS] = { 0x10000000, 0x20000000, 0x30000000,
 
 #define nullHigh 10        //indent from top at the beginning
 
-/* Period parameters for randomiser*/ //////////////////////////////////// 
-//#include <cmath>
-#define N_period 624
-#define M_period 397
-#define MATRIX_A 0x9908b0dfUL   /* constant vector a */
-#define UPPER_MASK 0x80000000UL /* most significant w-r bits */
-#define LOWER_MASK 0x7fffffffUL /* least significant r bits */
-class Random
-{     
-   public:
-      Random(unsigned long s) {
-         mti=N_period+1;
-         init_genrand(s);
-         r1 = 0; r2 = 0; s = 0; rho = 0;
-         valid = false;
-      };
-      ~Random(){};      
-      float Normal_dist(void);
-      double genrand_real2(void);
-
-   private:
-      float r1, r2, s, rho;
-      bool valid;
-      void init_genrand(unsigned long s);
-      unsigned long mt[N_period]; /* the array for the state vector  */
-      int mti;             /* mti==N_period+1 means mt[N_period] is not initialized */
-};
-float Random :: Normal_dist(void)
-{
-   if (!valid)
-   {
-      do {
-      r1 = 2.0*genrand_real2() - 1;
-      r2 = 2.0*genrand_real2() - 1;
-      s = r1 * r1 + r2 * r2;
-      } 
-      while (s > 1);
-      rho = sqrtf((float)-2.0 * logf(s)/s);
-      valid = true;
-   } else {
-   valid = false;
-   }  
-   return rho * (valid ? r1 : r2); //return rho * (valid ? r1 : r2) * m_sigma + m_mean;
-};
-double Random :: genrand_real2(void)
-{
-    unsigned long y;
-    static unsigned long mag01[2]={0x0UL, MATRIX_A};
-    /* mag01[x] = x * MATRIX_A  for x=0,1 */
-
-    if (mti >= N_period) { /* generate N_period words at one time */
-        int kk;
-        if (mti == N_period+1)   /* if init_genrand() has not been called, */
-            init_genrand(5489UL); /* a default initial seed is used */
-
-        for (kk=0;kk<N_period-M_period;kk++) {
-            y = (mt[kk]&UPPER_MASK)|(mt[kk+1]&LOWER_MASK);
-            mt[kk] = mt[kk+M_period] ^ (y >> 1) ^ mag01[y & 0x1UL];
-        }
-        for (;kk<N_period-1;kk++) {
-            y = (mt[kk]&UPPER_MASK)|(mt[kk+1]&LOWER_MASK);
-            mt[kk] = mt[kk+(M_period-N_period)] ^ (y >> 1) ^ mag01[y & 0x1UL];
-        }
-        y = (mt[N_period-1]&UPPER_MASK)|(mt[0]&LOWER_MASK);
-        mt[N_period-1] = mt[M_period-1] ^ (y >> 1) ^ mag01[y & 0x1UL];
-        mti = 0;
-    }  
-    y = mt[mti++];
-    /* Tempering */
-    y ^= (y >> 11);
-    y ^= (y << 7) & 0x9d2c5680UL;
-    y ^= (y << 15) & 0xefc60000UL;
-    y ^= (y >> 18);
-    return y*(1.0/4294967296.0); 
-   //return y*2.328306436538696e-10;
-};
-void Random :: init_genrand(unsigned long s)
-{
-    mt[0]= s & 0xffffffffUL;
-    for (mti=1; mti<N_period; mti++) {
-        mt[mti] = 
-       (1812433253UL * (mt[mti-1] ^ (mt[mti-1] >> 30)) + mti); 
-        mt[mti] &= 0xffffffffUL;
-        /* for >32 bit machines */
-    }
-};
 /////////////////////////////////////////////////
+
+
+
+
+int fpga_board = -1;
+int fpga_chip = -1; 
+
+bool flag_compare = false;
+bool flag_rand = false;
+bool flag_file = false; 
+char *out_file;
+
+string coord_out_file; 
+ 
+unsigned int N_d;
+
+void print_usage(char *argv[])
+{
+   printf("Usage:\n");
+   printf("\n--------------------------------------------------------------------------\n");
+   printf("To run HLS TEST:\nsudo %s -b [board] -v [chip_select] -N [N_d] [-compare/ ] [-rand/ ] [-file output file name]\n", argv[0]);   
+   printf("chip_select: C0 or C1 or C2 or C3\n");
+   printf("N_d: number of molecules in one filament\n");
+   printf("-compare to compare CPU and FPGA results\n");
+   printf("-rand to run CPU test with randomness\n");
+   printf("-file: if set uses this file to output\n");
+   printf("\n--------------------------------------------------------------------------\n");
+}
+
+
+                           //##########################command line parser#####################################################
+int process_cmd_line(int argc, char *argv[], struct cmd_params_t *cmd_p)
+{
+   int i;
+   unsigned int board;
+
+   int got_brd=0, got_v7=0, got_N_d=0;
+   for (i=0;i<argc; i++) {
+      
+      if ((strlen(argv[i])>=6) && !strncmp("--help",argv[i],6) ){
+         print_usage(argv);
+         return -2;
+      }
+      
+      if ((strlen(argv[i])>=5) && !strncmp("-file",argv[i],5) ){
+         flag_file=1;
+         out_file = argv[i+1];
+      }  
+
+      if ((strlen(argv[i])>=8) && !strncmp("-compare",argv[i],8) ){
+         flag_compare=1;
+      }  
+      
+      if ((strlen(argv[i])>=4) && !strncmp("-rand",argv[i],5) ){
+         flag_rand=1;
+         
+         printf("=====================================================================================\n");
+      }
+
+      if ((strlen(argv[i])>=2) && !strncmp("-N",argv[i],5) ){
+         sscanf(argv[i+1],"%d",&N_d);
+         got_N_d=1;
+      }     
+      
+      if ((strlen(argv[i])>=2)&& !strncmp("-b",argv[i],2)) {
+         if (i!=(argc-1) && sscanf(argv[i+1],"%d",&board)>0){
+            cmd_p->board = board;
+            got_brd = 1;
+         }
+      }
+      
+      if ((strlen(argv[i])>=2)&& !strncmp("-v",argv[i],2)) {
+         if (i <argc && (strlen(argv[i+1])>=2)&& !strncmp("C0",argv[i+1],2)) {
+            cmd_p->v7 = CS_C0; got_v7 = 1; 
+         } else if (i <argc  && (strlen(argv[i+1])>=2)&&  !strncmp("C1",argv[i+1],2)) {
+            cmd_p->v7 = CS_C1;  got_v7 = 1;
+         } else if (i <argc  && (strlen(argv[i+1])>=2)&&  !strncmp("C2",argv[i+1],2)) {
+            cmd_p->v7 = CS_C2; got_v7 = 1;
+         } else if (i <argc && (strlen(argv[i+1])>=2)&&  !strncmp("C3",argv[i+1],2)) {
+            cmd_p->v7 = CS_C3;  got_v7 = 1; 
+            
+         }
+
+      }
+      
+   }
+
+   /////////////////////////////////////////////////////    
+   if (got_brd && got_v7&&got_N_d){
+      return 0;
+   }
+   else{
+      printf("\n %s: missing or invalid operand\n Try 'sudo %s --help' for more information\n\n", argv[0], argv[0]);
+      return -1;
+   }
+
+}
 
 int main(int argc, char *argv[])
 {
    int dev;
    unsigned int reg_val;
+
+  int opt;
+
+
+   while ((opt = getopt(argc, argv, "b:v:N:f:cr")) != -1) {
+     switch (opt) {
+       case 'b': fpga_board = stoi(optarg); break;
+       case 'v': fpga_chip = stoi(optarg); break;
+       case 'N': N_d = stoi(optarg); break;
+       case 'f': coord_out_file = string(optarg); flag_file = true; break;
+       case 'c': flag_compare = true; break;
+       case 'r': flag_rand = true; break;
+       default: print_usage(argv); break;
+     }
+   }
+
+   cout << "board -> " << fpga_board << endl;
+   cout << "fpga_chip -> " << fpga_chip << endl;
+   cout << "N_d -> " << N_d << endl;
+   cout << "coord_out_file -> " << coord_out_file << endl;
+   cout << "flag_compare -> " << flag_compare << endl;
+   cout << "flag_rand -> " << flag_rand << endl;
+
+
+   return 0;
 
    if (load_coeffs_from_json() < 0) {
       printf("Error loading coefficients from json file\n");
@@ -277,6 +314,9 @@ int main(int argc, char *argv[])
       return -2;
    }
    
+
+    
+
    double dt_c[N];
    double dt_f[N];
    printf("N_d is %d\n",N_d);
@@ -766,73 +806,7 @@ printf("hls done cnt = %d, reg_val = 0x%x\n",cnt, reg_val);
 
 
    
-//##########################command line parser#####################################################
-int process_cmd_line(int argc, char *argv[], struct cmd_params_t *cmd_p)
-{
-   int i;
-   unsigned int board;
 
-   int got_brd=0, got_v7=0, got_N_d=0;
-   for (i=0;i<argc; i++) {
-      
-      if ((strlen(argv[i])>=6) && !strncmp("--help",argv[i],6) ){
-         print_usage(argv);
-         return -2;
-      }
-      
-      if ((strlen(argv[i])>=5) && !strncmp("-file",argv[i],5) ){
-         flag_file=1;
-         out_file = argv[i+1];
-      }  
-
-      if ((strlen(argv[i])>=8) && !strncmp("-compare",argv[i],8) ){
-         flag_compare=1;
-      }  
-      
-      if ((strlen(argv[i])>=4) && !strncmp("-rand",argv[i],5) ){
-         flag_rand=1;
-         
-         printf("=====================================================================================\n");
-      }
-
-      if ((strlen(argv[i])>=2) && !strncmp("-N",argv[i],5) ){
-         sscanf(argv[i+1],"%d",&N_d);
-         got_N_d=1;
-      }     
-      
-      if ((strlen(argv[i])>=2)&& !strncmp("-b",argv[i],2)) {
-         if (i!=(argc-1) && sscanf(argv[i+1],"%d",&board)>0){
-            cmd_p->board = board;
-            got_brd = 1;
-         }
-      }
-      
-      if ((strlen(argv[i])>=2)&& !strncmp("-v",argv[i],2)) {
-         if (i <argc && (strlen(argv[i+1])>=2)&& !strncmp("C0",argv[i+1],2)) {
-            cmd_p->v7 = CS_C0; got_v7 = 1; 
-         } else if (i <argc  && (strlen(argv[i+1])>=2)&&  !strncmp("C1",argv[i+1],2)) {
-            cmd_p->v7 = CS_C1;  got_v7 = 1;
-         } else if (i <argc  && (strlen(argv[i+1])>=2)&&  !strncmp("C2",argv[i+1],2)) {
-            cmd_p->v7 = CS_C2; got_v7 = 1;
-         } else if (i <argc && (strlen(argv[i+1])>=2)&&  !strncmp("C3",argv[i+1],2)) {
-            cmd_p->v7 = CS_C3;  got_v7 = 1; 
-            
-         }
-
-      }
-      
-   }
-
-   /////////////////////////////////////////////////////    
-   if (got_brd && got_v7&&got_N_d){
-      return 0;
-   }
-   else{
-      printf("\n %s: missing or invalid operand\n Try 'sudo %s --help' for more information\n\n", argv[0], argv[0]);
-      return -1;
-   }
-
-}
 
 
 int fpga_init(int argc, char *argv[], int *dev_out) {
@@ -953,18 +927,7 @@ int fpga_init(int argc, char *argv[], int *dev_out) {
 }
 
 
-void print_usage(char *argv[])
-{
-   printf("Usage:\n");
-   printf("\n--------------------------------------------------------------------------\n");
-   printf("To run HLS TEST:\nsudo %s -b [board] -v [chip_select] -N [N_d] [-compare/ ] [-rand/ ] [-file output file name]\n", argv[0]);   
-   printf("chip_select: C0 or C1 or C2 or C3\n");
-   printf("N_d: number of molecules in one filament\n");
-   printf("-compare to compare CPU and FPGA results\n");
-   printf("-rand to run CPU test with randomness\n");
-   printf("-file: if set uses this file to output\n");
-   printf("\n--------------------------------------------------------------------------\n");
-}
+
 
 
 

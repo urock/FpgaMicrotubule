@@ -24,7 +24,7 @@
 #include "rosta-ioctl.h"
 //#include "rosta-common.h"
 
-typedef unsigned long long uint64_t; 
+//typedef unsigned long long uint64_t; 
 
 // comment this to turn off debug printf
 #define ROSTA_DEBUG

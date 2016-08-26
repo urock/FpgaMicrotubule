@@ -1,8 +1,8 @@
 CC=gcc
 CFLAGS=-g -Wall -std=c99 -fPIC -shared -D_XOPEN_SOURCE=500 -D_BSD_SOURCE 
-ifdef PLX_SDK_DIR 
-CFLAGS += -DUSE_PLX
-endif
+# ifdef PLX_SDK_DIR 
+# CFLAGS += -DUSE_PLX
+# endif
 
 
 RINC = $(ROSTA_SDK_DIR)/lin/ApiLib/include

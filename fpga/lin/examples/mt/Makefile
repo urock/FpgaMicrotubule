@@ -1,5 +1,5 @@
 CC=g++
-CFLAGS = -g -Wall  -O3 -fopenmp -Wno-uninitialized
+CFLAGS = -g -Wall -O1 -std=c++11 -Wno-uninitialized
 
 
 RINC = $(ROSTA_SDK_DIR)/lin/ApiLib/include
@@ -11,7 +11,7 @@ ILIB = -I$(RINC)
 
 
 
-SOURCES=rc47_mt_12.cpp mt_cpu.cpp 
+SOURCES=rc47_mt_12.cpp mt_cpu.cpp rand.cpp
 JSON_SRC=jsoncpp/jsoncpp.cpp
 OBJECTS=$(SOURCES:.cpp=.o)
 JSON_OBJ=jsoncpp.o
