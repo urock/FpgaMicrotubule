@@ -208,47 +208,47 @@ void print_usage(char *argv[])
 
 int main(int argc, char *argv[])
 {
-   int dev;
-   unsigned int reg_val;
+  int dev;
+  unsigned int reg_val;
 
   int opt;
 
 
-   while ((opt = getopt(argc, argv, "b:v:N:f:cr")) != -1) {
-     switch (opt) {
-       case 'b': fpga_board = stoi(optarg); break;
-       case 'v': fpga_chip = stoi(optarg); break;
-       case 'N': N_d = stoi(optarg); break;
-       case 'f': coord_out_file = string(optarg); flag_file = true; break;
-       case 'c': flag_compare = true; break;
-       case 'r': flag_rand = true; break;
-       default: print_usage(argv); break;
-     }
-   }
+  while ((opt = getopt(argc, argv, "b:v:N:f:cr")) != -1) {
+    switch (opt) {
+      case 'b': fpga_board = stoi(optarg); break;
+      case 'v': fpga_chip = stoi(optarg); break;
+      case 'N': N_d = stoi(optarg); break;
+      case 'f': coord_out_file = string(optarg); flag_file = true; break;
+      case 'c': flag_compare = true; break;
+      case 'r': flag_rand = true; break;
+      default: print_usage(argv); break;
+    }
+  }
 
-   FpgaDev Fpga;
+  FpgaDev Fpga;
 
-   if (Fpga.FindDevices() < 0) {
-      cerr << "Error in FindDevices\n";
-      return -1;
-   }
-
-
-   dev = Fpga.open(fpga_board, fpga_chip);
-
-   if (dev == -1) {
-      cerr << "Error in Fpga Open Device\n";
-      return -1;      
-   }
- 
-   if (Fpga.close(dev) < 0) {
-       cerr << "Error in Fpga Close Device\n";
-      return -1;         
-   }
+  if (Fpga.FindDevices() < 0) {
+    cerr << "Error in FindDevices\n";
+    return -1;
+  }
 
 
+  dev = Fpga.open(fpga_board, fpga_chip);
 
-   return 0;
+  if (dev == -1) {
+    cerr << "Error in Fpga Open Device\n";
+    return -1;      
+  }
+  
+  if (Fpga.close(dev) < 0) {
+    cerr << "Error in Fpga Close Device\n";
+    return -1;         
+  }
+
+
+
+  return 0;
 
    if (load_coeffs_from_json() < 0) {
       printf("Error loading coefficients from json file\n");
@@ -342,35 +342,17 @@ int main(int argc, char *argv[])
       srand (time(NULL));
       
       // set seed vals
-      for (int i =0; i < NUM_SEEDS; i++){
+      for (int i =0; i < NUM_SEEDS; ++i){
 #ifdef TEST_SEEDS
             seeds[i] = test_seeds[i];
 #else
             seeds[i]=(unsigned int)rand();
 #endif
-         unsigned int addr = SEED_REG + 4*i;
-         RD_WriteDeviceReg32m(dev, CNTRL_BAR, addr, seeds[i]); 
-      }     
+      }   
+
+      Fpga.StartRandomGenerator(dev,NUM_SEEDS, seeds); 
       
       printf("\nFlag rand is SET\n\n");
-      
-      
-      RD_ReadDeviceReg32m(dev, CNTRL_BAR, COMMAND_REG, reg_val);
-   
-      // deassert rand reset
-      reg_val |= (1<<4);
-      RD_WriteDeviceReg32m(dev, CNTRL_BAR, COMMAND_REG, reg_val);
-      
-      // set rand_enable flag
-      reg_val |= (1<<7);
-      RD_WriteDeviceReg32m(dev, CNTRL_BAR, COMMAND_REG, reg_val);
-
-      // start rand core
-      reg_val |= (1<<5);   
-      RD_WriteDeviceReg32m(dev, CNTRL_BAR, COMMAND_REG, reg_val);    
-      
-
-      
       
    }
    
@@ -483,29 +465,17 @@ int main(int argc, char *argv[])
    
    
 
-   if (flag_compare==1) fclose(f_p);
-   fclose(f_p1);
-   fclose(f_length);
-   fclose(f_type);
-
-   RD_ReadDeviceReg32m(dev, CNTRL_BAR, COMMAND_REG, reg_val);
-   
-   // assert rand reset
-   reg_val &= ~(1<<4);
-   RD_WriteDeviceReg32m(dev, CNTRL_BAR, COMMAND_REG, reg_val);
-      
-   // reset rand_enable flag
-   reg_val &= ~(1<<7);
-   RD_WriteDeviceReg32m(dev, CNTRL_BAR, COMMAND_REG, reg_val); 
-   
+  if (flag_compare==1) fclose(f_p);
+  fclose(f_p1);
+  fclose(f_length);
+  fclose(f_type);
 
 
-   free(wr_buf_free);
-   free(rd_buf_free);
+  Fpga.StopRandomGenerator(dev,NUM_SEEDS, seeds); 
 
 
-   RD_CloseDevice(pd_ptr);
-   return 0; 
+  Fpga.close(dev);
+  return 0; 
 
 }
 

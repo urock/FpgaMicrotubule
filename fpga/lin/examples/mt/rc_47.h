@@ -10,13 +10,13 @@
 
 
 struct cmd_params_t {
-	int		board;
-	int		v7;
+  int   board;
+  int   v7;
 };
 
 typedef struct {
-	float d0;
-	float d1; 
+  float d0;
+  float d1; 
 } two_floats; 
 
 
@@ -32,15 +32,15 @@ void init_coords(vector<vector<float> >  & x, vector<vector<float> >  & y, vecto
 int compare_results(vector<vector<float> >  & x_1,vector<vector<float> >  & y_1, vector<vector<float> >  & t_1,
 vector<vector<float> >  & x_2, vector<vector<float> >  & y_2, vector<vector<float> >  & t_2);
 
-void calc_dt(struct timeval *tt1, struct timeval *tt2, double *tsec);						
+void calc_dt(struct timeval *tt1, struct timeval *tt2, double *tsec);           
 
 void print_coords(FILE *f_p, vector<vector<float> >  & x, vector<vector<float> >  & y, vector<vector<float> >  & t);
 void print_coords_type(FILE *f_p, vector<vector<int> > &type_mol);
 
 
-int mt_fpga(	int 	dev,
-int		n_step,				// полное количество шагов по времени
-int 	load_coords,		//
+int mt_fpga(  int   dev,
+int   n_step,       // полное количество шагов по времени
+int   load_coords,    //
 int seeds[],
 
 vector<vector<float> >  & x_in,
@@ -52,9 +52,9 @@ vector<vector<float> >  & y_out,
 vector<vector<float> >  & t_out
 ) ; 
 
-int mt_fpga1(	int 	dev,
-int		n_step,				// полное количество шагов по времени
-int 	load_coords,		//
+int mt_fpga1( int   dev,
+int   n_step,       // полное количество шагов по времени
+int   load_coords,    //
 //int seeds[],
 
 vector<vector<float> >  & x_in,
@@ -69,9 +69,9 @@ vector<vector<int> > &type_mol
 
 
 
-int mt_fpga(	int 	dev,
-int		n_step,				// полное количество шагов по времени
-int 	load_coords,		//
+int mt_fpga(  int   dev,
+int   n_step,       // полное количество шагов по времени
+int   load_coords,    //
 //int seeds[],
 
 vector<vector<float> >  & x_in,
