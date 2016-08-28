@@ -471,7 +471,7 @@ int main(int argc, char *argv[])
   fclose(f_type);
 
 
-  Fpga.StopRandomGenerator(dev,NUM_SEEDS, seeds); 
+  Fpga.StopRandomGenerator(dev); 
 
 
   Fpga.close(dev);

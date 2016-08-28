@@ -176,7 +176,7 @@ int FpgaDev::GetIndexByDev(int dev) {
   }
 
 
-  int FpgaDev::StopRandomGenerator(int dev, int L, unsigned int *seeds) {
+  int FpgaDev::StopRandomGenerator(int dev) {
     
     unsigned int reg_val; 
 

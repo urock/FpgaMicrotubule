@@ -31,14 +31,16 @@ namespace microtubule {
 
     FpgaDev();
     int FindDevices(void);
-    int GetIndexByDev(int);
 
     int open(int, int);
-    int SetSeeds(int, int, unsigned int *);
+    int StartRandomGenerator(int, int, unsigned int *);
+    int StopRandomGenerator(int);
     int close(int);
 
 
   private: 
+
+    int GetIndexByDev(int dev);
 
     struct rc47_board_t rc47[MAX_BOARDS];
 
