@@ -8,9 +8,6 @@ extern  unsigned int N_d;
 FILE * f_r;
 vector<vector<bit> > type;//[13][N_d];		
 
-vector<vector<float> > x;//[13][N_d+3];
-vector<vector<float> > y;//[13][N_d+3];
-vector<vector<float> > t;//[13][N_d+3];
 
 vector<vector<float> >lat_l_x;//[13][N_d+1];
 vector<vector<float> > lat_l_y;//[13][N_d+1];
@@ -66,7 +63,7 @@ extern float teta0_D;
 extern float teta0_T;		
 
 
-int run_step_c(int flag_rand_c);
+int run_step_c(mt_coords_t  &mt_coords, int flag_rand_c);
 
 unsigned int N_d_choose = 0;
 
@@ -239,36 +236,23 @@ void calc_grad_c(		unsigned int i1, 		// i index i?aaie iieaeoeu
 
 
 
-// ooo ia?aue eiaaen ii?aaaeyao i?ioioeeaiaio (ii ai?eciioaee)
-// a aoi?ie - iiia? iieaeoeu aioo?e yoiai i?ioioeeaiaioa (ii aa?oeeaee)
 
-
-
-
-// ooieeoey au?eney?uay eii?aeiaou a oa?aiea caaaiiiai eiee?anoaa oaaia ii a?aiaie - n_step
-// ia?aue ?ac aie?ia aucuaaouny n ia?aiao?ii load_coords = 1, ?oiau i?ieieoeaeece?iaaou ianneau eii?aeiao
-// iineaao?uea auciau aie?iu auou n load_coords = 0, ?oiau nio?aiyou eii?aeiaou
-int mt_cpu(	int		n_step,				// iieiia eiee?anoai oaaia ii a?aiaie
-			int 	load_coords,		//
+int mt_cpu(	int		n_step,				
 			int		flag_rand_c,
 			int		flag_seed_c,
 
 			unsigned int seeds[],
 
-			vector<vector<float> >  & x_in,		// aoiaiua ianneau eii?aeiao, eniieuco?ony i?e load_coords = 1
-			vector<vector<float> >  & y_in,
-			vector<vector<float> >  & t_in,
+			mt_coords_t  &mt_coords,
 
-			vector<vector<float> >  & x_out,		// auoiaiua ianneau eii?aeiao
-			vector<vector<float> >  & y_out,
-			vector<vector<float> >  & t_out,
+
 			unsigned int N_d_chooseInput
 )
 
 {
 N_d_choose = N_d_chooseInput;
 	
-printf("load_coords %d flag_rand %d flag_seed %d\n", load_coords, flag_rand_c, flag_seed_c);
+printf("flag_rand %d flag_seed %d\n",  flag_rand_c, flag_seed_c);
 
 f_r=fopen("rand_coords.txt","a");
 	
@@ -279,9 +263,6 @@ f_r=fopen("rand_coords.txt","a");
 		allocate=1;
 
 		
-		x.resize(13);
-		y.resize(13);
-		t.resize(13);
 		lat_l_x.resize(13);
 		lat_l_y.resize(13);
 		lat_l_t.resize(13);
@@ -296,9 +277,7 @@ f_r=fopen("rand_coords.txt","a");
 		long_d_t.resize(13);
 		type.resize(13);
 		for (int p = 0; p < 13; p++){
-			x[p].resize(N_d_choose+3);
-			y[p].resize(N_d_choose+3);
-			t[p].resize(N_d_choose+3);
+
 			lat_l_x[p].resize(N_d_choose+1);
 			lat_l_y[p].resize(N_d_choose+1);
 			lat_l_t[p].resize(N_d_choose+1);
@@ -334,38 +313,21 @@ f_r=fopen("rand_coords.txt","a");
 
 	unsigned int i,j;
 
-	if (load_coords) {
+
 
 		for (j=0; j<N_d_choose; j++)
-		for (i=0; i<13; i++) {
-			type[i][j] = 0;		// ana aeia?u oeia D
+			for (i=0; i<13; i++) 
+				type[i][j] = 0;		
 
-
-			x[i][j] = x_in[i][j];
-			y[i][j] = y_in[i][j];
-			t[i][j] = t_in[i][j];
-
-		}
-
-	}
-	
 
 
 
 	for (int step=1; step <= n_step; step++){
-		if (run_step_c(flag_rand_c)<0) 
+		if (run_step_c(mt_coords, flag_rand_c)<0) 
 			return -1;	
 	}
 
 
-
-
-	for (i=0; i<13; i++)
-	for (j=0; j<N_d_choose; j++) 	{
-		x_out[i][j] = x[i][j];
-		y_out[i][j] = y[i][j];
-		t_out[i][j] = t[i][j];
-	}
 	
 	
 
@@ -379,7 +341,7 @@ return 0;
 
 
 
-int run_step_c(int flag_rand_c)
+int run_step_c(mt_coords_t  &mt_coords, int flag_rand_c)
 {
 	unsigned int i, j;
 
@@ -408,11 +370,11 @@ int run_step_c(int flag_rand_c)
 
 			calc_grad_c(i, j, i2, type[i][j],  pos,
 
-			x[i ][j],  y[i][j], t[i][j],											// mol1 (right) - i?aaay iieaeoea, aey iaa iaiiaeyai neeu aey acaeiiaaenoaey neaaa e aaa?oo
+			mt_coords.x[i ][j],  mt_coords.y[i][j], mt_coords.t[i][j],											// mol1 (right) - i?aaay iieaeoea, aey iaa iaiiaeyai neeu aey acaeiiaaenoaey neaaa e aaa?oo
 
-			x[i2][j2], y[i2][j2], t[i2][j2],										// mol2 (left) - iieaeoey neaaa ii ai?eciioaee, aey iaa iaiiaeyai neeo acaeiiaaeonoaey ni?aaa
+			mt_coords.x[i2][j2], mt_coords.y[i2][j2], mt_coords.t[i2][j2],										// mol2 (left) - iieaeoey neaaa ii ai?eciioaee, aey iaa iaiiaeyai neeo acaeiiaaeonoaey ni?aaa
 
-			x[i][j+1],  y[i][j+1], t[i][j+1],										// mol3 (up)  - iieaeoea naa?oo ii aa?oeeaee, aey iaa iaiiaeyai neeo acaeiiaaenoaey nieco
+			mt_coords.x[i][j+1],  mt_coords.y[i][j+1], mt_coords.t[i][j+1],										// mol3 (up)  - iieaeoea naa?oo ii aa?oeeaee, aey iaa iaiiaeyai neeo acaeiiaaenoaey nieco
 
 			&lat_l_x[i ][j], &lat_l_y[i ][j], &lat_l_t[i ][j],
 			&lat_r_x[i2][j2], &lat_r_y[i2][j2], &lat_r_t[i2][j2],
@@ -440,91 +402,84 @@ int run_step_c(int flag_rand_c)
 
 
 
-	for (j=0; j<N_d_choose; j+=3)		// coordinates are fixed at j=0
-	for (i=0; i<13; i++) {
-	if (flag_rand_c==1){
-	for (int ii=0; ii<5; ii++) {		
-			 if (get_norm_vals(ii, &rand_buf[2*ii], &rand_buf[2*ii+1])!=0) {printf("NaN error!!!!\n"); return -1;}
-		}
-		}
+	for (j=0; j<N_d_choose; j+=3)	{	// coordinates are fixed at j=0
+		for (i=0; i<13; i++) {
+			if (flag_rand_c==1){
+				for (int ii=0; ii<5; ii++) {		
+					if (get_norm_vals(ii, &rand_buf[2*ii], &rand_buf[2*ii+1])!=0) {
+					 	printf("NaN error!!!!\n"); 
+					 	return -1;
+					}
+				}
+			}
 		
-	for (int p=0; p<10; p++)	
-		//fprintf(f_r,"%.3f\n",rand_buf[p]);	
-		
-		
 
 
-			 temp_val1=rand_buf[0];
-			 temp_val2=rand_buf[1];
-			 temp_val3=rand_buf[2];
+			temp_val1=rand_buf[0];
+			temp_val2=rand_buf[1];
+			temp_val3=rand_buf[2];
 
 
-		f_x = lat_l_x[i][j] + lat_r_x[i][j] + long_u_x[i][j] + long_d_x[i][j];
-		f_y = lat_l_y[i][j] + lat_r_y[i][j] + long_u_y[i][j] + long_d_y[i][j];
-		f_t = lat_l_t[i][j] + lat_r_t[i][j] + long_u_t[i][j] + long_d_t[i][j];
+			f_x = lat_l_x[i][j] + lat_r_x[i][j] + long_u_x[i][j] + long_d_x[i][j];
+			f_y = lat_l_y[i][j] + lat_r_y[i][j] + long_u_y[i][j] + long_d_y[i][j];
+			f_t = lat_l_t[i][j] + lat_r_t[i][j] + long_u_t[i][j] + long_d_t[i][j];
 
 		
-		if (j>0){
-			 if (flag_rand_c==1){
-				 x[i][j] -= dt_viscPF * f_x + sqrt_PF_xy*temp_val1;
-				 y[i][j] -= dt_viscPF * f_y + sqrt_PF_xy*temp_val2;
-				 t[i][j] -= dt_viscPF_teta* f_t + sqrt_PF_teta*temp_val3;
-			 } else{
-				x[i][j] -= dt_viscPF * f_x ;
-				y[i][j] -= dt_viscPF * f_y;
-				t[i][j] -= dt_viscPF_teta* f_t;
-				
-			 }
-		}
+			if (j > 0) {
+				if (flag_rand_c==1){
+					mt_coords.x[i][j] -= dt_viscPF * f_x + sqrt_PF_xy*temp_val1;
+					mt_coords.y[i][j] -= dt_viscPF * f_y + sqrt_PF_xy*temp_val2;
+					mt_coords.t[i][j] -= dt_viscPF_teta* f_t + sqrt_PF_teta*temp_val3;
+				} else{
+					mt_coords.x[i][j] -= dt_viscPF * f_x ;
+					mt_coords.y[i][j] -= dt_viscPF * f_y;
+					mt_coords.t[i][j] -= dt_viscPF_teta* f_t;
+					
+				}
+			}
 
-			 temp_val1=rand_buf[3];
-			 temp_val2=rand_buf[4];
-			 temp_val3=rand_buf[5];
+			temp_val1=rand_buf[3];
+			temp_val2=rand_buf[4];
+			temp_val3=rand_buf[5];
 
-		f_x = lat_l_x[i][j+1] + lat_r_x[i][j+1] + long_u_x[i][j+1] + long_d_x[i][j+1];
-		f_y = lat_l_y[i][j+1] + lat_r_y[i][j+1] + long_u_y[i][j+1] + long_d_y[i][j+1];
-		f_t = lat_l_t[i][j+1] + lat_r_t[i][j+1] + long_u_t[i][j+1] + long_d_t[i][j+1];
+			f_x = lat_l_x[i][j+1] + lat_r_x[i][j+1] + long_u_x[i][j+1] + long_d_x[i][j+1];
+			f_y = lat_l_y[i][j+1] + lat_r_y[i][j+1] + long_u_y[i][j+1] + long_d_y[i][j+1];
+			f_t = lat_l_t[i][j+1] + lat_r_t[i][j+1] + long_u_t[i][j+1] + long_d_t[i][j+1];
 
-		 if (flag_rand_c==1){
-			 x[i][j+1] -= dt_viscPF * f_x + sqrt_PF_xy*temp_val1;
-			 y[i][j+1] -= dt_viscPF * f_y + sqrt_PF_xy*temp_val2;
-			 t[i][j+1] -= dt_viscPF_teta* f_t + sqrt_PF_teta*temp_val3;
-		 }
-		 else{
-			x[i][j+1] -= dt_viscPF * f_x ;
-			y[i][j+1] -= dt_viscPF * f_y;
-			t[i][j+1] -= dt_viscPF_teta* f_t;
+		 	if (flag_rand_c==1){
+				mt_coords.x[i][j+1] -= dt_viscPF * f_x + sqrt_PF_xy*temp_val1;
+				mt_coords.y[i][j+1] -= dt_viscPF * f_y + sqrt_PF_xy*temp_val2;
+				mt_coords.t[i][j+1] -= dt_viscPF_teta* f_t + sqrt_PF_teta*temp_val3;
+		 	} else {
+				mt_coords.x[i][j+1] -= dt_viscPF * f_x ;
+				mt_coords.y[i][j+1] -= dt_viscPF * f_y;
+				mt_coords.t[i][j+1] -= dt_viscPF_teta* f_t;
+		 	}
+
+
+
+			temp_val1=rand_buf[6];
+			temp_val2=rand_buf[7];
+			temp_val3=rand_buf[8];
+	
+			f_x = lat_l_x[i][j+2] + lat_r_x[i][j+2] + long_u_x[i][j+2] + long_d_x[i][j+2];
+			f_y = lat_l_y[i][j+2] + lat_r_y[i][j+2] + long_u_y[i][j+2] + long_d_y[i][j+2];
+			f_t = lat_l_t[i][j+2] + lat_r_t[i][j+2] + long_u_t[i][j+2] + long_d_t[i][j+2];
+
+			if (flag_rand_c==1){
+				mt_coords.x[i][j+2] -= dt_viscPF * f_x + sqrt_PF_xy*temp_val1;
+				mt_coords.y[i][j+2] -= dt_viscPF * f_y + sqrt_PF_xy*temp_val2;
+				mt_coords.t[i][j+2] -= dt_viscPF_teta* f_t + sqrt_PF_teta*temp_val3;
+			} else {
+				mt_coords.x[i][j+2] -= dt_viscPF * f_x;
+				mt_coords.y[i][j+2] -= dt_viscPF * f_y;
+				mt_coords.t[i][j+2] -= dt_viscPF_teta* f_t;
 			
-		 }
+		  }
 
+		} // i
 
-
-			 temp_val1=rand_buf[6];
-			 temp_val2=rand_buf[7];
-			 temp_val3=rand_buf[8];
-
-		f_x = lat_l_x[i][j+2] + lat_r_x[i][j+2] + long_u_x[i][j+2] + long_d_x[i][j+2];
-		f_y = lat_l_y[i][j+2] + lat_r_y[i][j+2] + long_u_y[i][j+2] + long_d_y[i][j+2];
-		f_t = lat_l_t[i][j+2] + lat_r_t[i][j+2] + long_u_t[i][j+2] + long_d_t[i][j+2];
-
-		if (flag_rand_c==1){
-			x[i][j+2] -= dt_viscPF * f_x + sqrt_PF_xy*temp_val1;
-			y[i][j+2] -= dt_viscPF * f_y + sqrt_PF_xy*temp_val2;
-			t[i][j+2] -= dt_viscPF_teta* f_t + sqrt_PF_teta*temp_val3;
-		}
-		else{
-			x[i][j+2] -= dt_viscPF * f_x;
-			y[i][j+2] -= dt_viscPF * f_y;
-			t[i][j+2] -= dt_viscPF_teta* f_t;
-			
-		 }
-
-
-
-
-
-
-	}
+ 	} // j
 
 
 return 0;

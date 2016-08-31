@@ -13,7 +13,7 @@
 #include "rc_47.h"
 #include "rand.h"
 #include "fpga.h"
-
+#include "mt_defines.h"
 
 #include "jsoncpp/json/json-forwards.h"
 #include "jsoncpp/json/json.h"
@@ -25,6 +25,8 @@
 using namespace std;
 using namespace microtubule;
 
+void init_coords(mt_coords_t  &mt_coords);
+
 
 struct pci_device pd[MAX_PCIE_DEVICES];
 struct rc47_board_t rc47[MAX_RC47_BOARDS];
@@ -35,7 +37,7 @@ unsigned int   *rd_buf, *rd_buf_free;
 
 
 
-unsigned int length; //length of MT with counting shifts
+unsigned int n_layers; //length of MT with counting shifts/ should be a multiple of 12
 unsigned int NStop[13]; //numbers of last monomers;
 unsigned int NStart[13];   //numbers of first monomers;
 
@@ -144,13 +146,13 @@ int load_coeffs_from_json(void)
    return 0; 
 }
 
-vector<vector<float> > x_1;
-vector<vector<float> > y_1;
-vector<vector<float> > t_1;
+// vector<vector<float> > x_1;
+// vector<vector<float> > y_1;
+// vector<vector<float> > t_1;
 
-vector<vector<float> > x_2;
-vector<vector<float> > y_2;
-vector<vector<float> > t_2;
+mt_coords_t mt_coords_f;
+mt_coords_t mt_coords_c;
+
 
 vector<vector<int> > type_mol;   //types
 
@@ -209,7 +211,6 @@ void print_usage(char *argv[])
 int main(int argc, char *argv[])
 {
   int dev;
-  unsigned int reg_val;
 
   int opt;
 
@@ -256,7 +257,47 @@ int main(int argc, char *argv[])
    }
 
  
+   if (use_coeffs_from_json) {
 
+      float float_buf[34];
+
+      float_buf[0] = viscPF;         
+      float_buf[1] = viscPF_teta;    
+      float_buf[2] = B_Koeff;        
+      float_buf[3] = dt             ;
+      float_buf[4] = dt_viscPF_teta; 
+      float_buf[5] = dt_viscPF;      
+      float_buf[6] = sqrt_PF_xy;     
+      float_buf[7] = sqrt_PF_teta;   
+      float_buf[8] = R_MT;           
+      float_buf[9] = A_Koeff;        
+      float_buf[10] = b_lat;          
+      float_buf[11] = A_long_D;       
+      float_buf[12] = b_long_D;       
+      float_buf[13] = A_long_T;       
+      float_buf[14] = b_long_T;       
+      float_buf[15] = ro0;            
+      float_buf[16] = ro0_long;       
+      float_buf[17] = inv_ro0_long;   
+      float_buf[18] = c_lat;          
+      float_buf[19] = d_lat;          
+      float_buf[20] = C_Koeff;        
+      float_buf[21] = Rad;            
+      float_buf[22] = inv_ro0;        
+      float_buf[23] = clat_dlat_ro0;  
+      float_buf[24] = clong_dlong_ro0;
+      float_buf[25] = d_lat_ro0;      
+      float_buf[26] = d_long_ro0;     
+      float_buf[27] = fi_r;           
+      float_buf[28] = psi_r;          
+      float_buf[29] = fi_l;           
+      float_buf[30] = psi_l;          
+      float_buf[31] = rad_mon;        
+      float_buf[32] = teta0_D;        
+      float_buf[33] = teta0_T;           
+
+      Fpga.LoadCoeffs(dev, 34, float_buf);       
+   }
     
 
    double dt_c[N];
@@ -269,20 +310,20 @@ int main(int argc, char *argv[])
    try{
       
       type_mol.resize(13);
-      x_1.resize(13);
-      y_1.resize(13);
-      t_1.resize(13);
-      x_2.resize(13);
-      y_2.resize(13);
-      t_2.resize(13);
+      mt_coords_f.x.resize(13);
+      mt_coords_f.y.resize(13);
+      mt_coords_f.t.resize(13);
+      mt_coords_c.x.resize(13);
+      mt_coords_c.y.resize(13);
+      mt_coords_c.t.resize(13);
       for (int i = 0; i < 13; i++){
          type_mol[i].resize(N_d);
-         x_1[i].resize(N_d);
-         y_1[i].resize(N_d);
-         t_1[i].resize(N_d);
-         x_2[i].resize(N_d);
-         y_2[i].resize(N_d);
-         t_2[i].resize(N_d);
+         mt_coords_f.x[i].resize(N_d);
+         mt_coords_f.y[i].resize(N_d);
+         mt_coords_f.t[i].resize(N_d);
+         mt_coords_c.x[i].resize(N_d);
+         mt_coords_c.y[i].resize(N_d);
+         mt_coords_c.t[i].resize(N_d);
       }
       
    } catch (const  std::bad_alloc& ba){
@@ -324,11 +365,11 @@ int main(int argc, char *argv[])
    for(int i = 0; i < 13; i++) {
       NStart[i] = 0;
    }
-   length = NStop[0] - NStart[0];
+   n_layers = NStop[0] - NStart[0];
 
    // get golden results
-   init_coords(x_1,y_1,t_1);
-   init_coords(x_2,y_2,t_2);
+   init_coords(mt_coords_f);
+   init_coords(mt_coords_c);
    
 
 
@@ -365,7 +406,7 @@ int main(int argc, char *argv[])
       struct timeval tt1, tt2;
       if (flag_compare==1) {
          get_time(&tt1);
-         if (mt_cpu(STEPS_TO_WRITE,1, flag_rand, flag_seed, seeds,  x_1,y_1,t_1,x_1,y_1, t_1, N_d)<0) { 
+         if (mt_cpu(STEPS_TO_WRITE, flag_rand, flag_seed, seeds,  mt_coords_c,  N_d)<0) { 
             printf("Nan Error in cpu. Step is %d. Exitting....\n",k); 
             break;
          }
@@ -375,7 +416,13 @@ int main(int argc, char *argv[])
       }
       
       get_time(&tt1);
-      mt_fpga1(dev,STEPS_TO_WRITE,1,x_2,y_2,t_2,x_2,y_2, t_2, type_mol);
+
+      // TODO: work on n_layers var
+      if (Fpga.CalcDynamics(dev,STEPS_TO_WRITE, n_layers, mt_coords_f, type_mol) < 0) {
+        cerr << "Error int Fpga.CalcDynamics" << endl;
+        return -1; 
+      }
+
       get_time(&tt2);
       calc_dt(&tt1,&tt2, &dt_f[k]);
 
@@ -384,7 +431,8 @@ int main(int argc, char *argv[])
       printf("Step %d\n\t CPU Time = %f\n\t FPGA Time = %f\n",k,dt_c[k],dt_f[k] );
 
       if (flag_compare==1){
-         err = compare_results(x_1,y_1,t_1,x_2,y_2,t_2);
+         // uncomment u1
+         // err = compare_results(x_1,y_1,t_1,x_2,y_2,t_2);
          if (err) {
             error += err;
             printf("Compare results failed at step = %d, errors = %d\n", k, error);
@@ -423,12 +471,14 @@ int main(int argc, char *argv[])
       //fixed -> check?, fix 250!
       //printf("r = %f\n", getDistance(x_2[1][j+1], y_2[i][j+1], t_2[i][j+1], x_2[i][j], y_2[i][j], t_2[i][j]));
       
+
       for (i=0; i<13; i++) {
          for (j=NStart[i]; j<NStop[i]-1; j++) {
-            if (getDistance(x_2[i][j+1], y_2[i][j+1], t_2[i][j+1], x_2[i][j], y_2[i][j], t_2[i][j]) >= cut_off) { //molecule deattached
+            if (getDistance(mt_coords_f.x[i][j+1], mt_coords_f.y[i][j+1], mt_coords_f.t[i][j+1], 
+                            mt_coords_f.x[i][j],   mt_coords_f.y[i][j],   mt_coords_f.t[i][j] ) >= cut_off) { //molecule deattached
                //printf("deattached :%i %i r = %f\n", i, j,getDistance(x_2[i][j+1], y_2[i][j+1], t_2[i][j+1], x_2[i][j], y_2[i][j], t_2[i][j]));
                for (j1=j; j1<NStop[i]; j1++) {
-                  y_2[i][j1] = -100;
+                  mt_coords_f.y[i][j1] = -100;
                   type_mol[i][j1] = -1;   //'-'
                   printf("deattached :%i %i\n", i, j1);
                   //todo type change
@@ -438,19 +488,20 @@ int main(int argc, char *argv[])
          }
       }
       
-      polimerization_algorithm(x_2, y_2, t_2, (float) tt1.tv_usec);
+      polimerization_algorithm(mt_coords_f, (float) tt1.tv_usec);
       
-      choose_to_shift_coords(x_2, y_2, t_2);
+      choose_to_shift_coords(mt_coords_f);
       
       
 //-------------------------------------- add reattach, kinetics---------------------------------------------------------------------------------------------------
       
-      if (flag_compare==1) print_coords(f_p, x_1, y_1, t_1);
-      print_coords(f_p1, x_2, y_2, t_2);
-      print_coords_type(f_type, type_mol);
+
+      if (flag_compare==1) print_coords(f_p, mt_coords_c); 
+      print_coords(f_p1, mt_coords_f); 
+      print_coords_type(f_type, type_mol); 
       float y_avg = 0;;
       for (i = 0; i < 13; i++) {
-         y_avg += y_2[i][NStop[i]-1];
+         y_avg += mt_coords_f.y[i][NStop[i]-1];
       }
       printf("avg_y %f \n", y_avg);
       
@@ -481,240 +532,7 @@ int main(int argc, char *argv[])
 
 
 
-int mt_fpga(   int   dev,
-            int      n_step,           // 
-            int   load_coords,      //
-            //int seeds[],
 
-            vector<vector<float> >  & x_in,
-            vector<vector<float> >  & y_in,
-            vector<vector<float> >  & t_in,
-
-            vector<vector<float> >  & x_out,
-            vector<vector<float> >  & y_out,
-            vector<vector<float> >  & t_out
-) 
-{
-   return -1;  
-}
-
-
-int mt_fpga1(  int   dev,
-            int      n_step,           //time steps to run
-            int   load_coords,      //
-            //int seeds[],
-
-            vector<vector<float> >  & x_in,
-            vector<vector<float> >  & y_in,
-            vector<vector<float> >  & t_in,
-
-            vector<vector<float> >  & x_out,
-            vector<vector<float> >  & y_out,
-            vector<vector<float> >  & t_out,
-            vector<vector<int> > & type_mol
-         ) 
-{  
-
-   two_floats tmp; 
-   two_floats w0, w1;
-   
-   unsigned int reg_val; 
-   unsigned int i,j; 
-
-   int cnt, hls_done;
-   
-   int k = 0; // ddr buffer index
-   
-   two_floats * buf_in = (two_floats *)wr_buf;
-   
-   // 16 bytes for each molecule 
-         
-   
-   for (i=0; i<13; i++)
-   for (j=0; j<N_d; j++) {
-      
-      tmp.d0 = x_in[i][j];
-      tmp.d1 = y_in[i][j];    
-      
-      
-      buf_in[k++] = tmp;
-      tmp.d0 = t_in[i][j];
-      if (type_mol[i][j] == -1) {
-         tmp.d1 = 1;
-      } else {
-         tmp.d1 = type_mol[i][j];
-      }     
-      buf_in[k++] = tmp; 
-   }
-
-
-   // deassert mt hls reset
-   RD_ReadDeviceReg32m(dev, CNTRL_BAR, COMMAND_REG, reg_val);
-   reg_val |= (1<<6);
-   RD_WriteDeviceReg32m(dev, CNTRL_BAR, COMMAND_REG, reg_val);
-
-
-   
-
-   
-   //////////////////////////////////////////////////////////////////////////////
-   RD_WriteDeviceReg32m(dev, CNTRL_BAR, HLS_A, n_step);
-   
-   int p2 = 0;
-   switch(N_d) {
-      case 12: p2 = 0; break;
-      case 24: p2 = 1; break;
-      case 36: p2 = 2; break;
-      case 48: p2 = 3; break;
-      case 60: p2 = 4; break;
-      case 72: p2 = 5; break;
-      case 84: p2 = 6; break;
-      case 108: p2 = 7; break;
-      case 156: p2 = 8; break;
-      case 216: p2 = 9; break;
-      default: p2 = 2;  
-   }
-   
-   RD_WriteDeviceReg32m(dev, CNTRL_BAR, HLS_B, p2);
-
-   RD_WriteDeviceReg32m(dev, CNTRL_BAR, HLS_OFFSET_I, (unsigned int)use_coeffs_from_json);
-   
-   if (fpga_write_to_axi(dev, wr_buf, SIZE_DWORD*sizeof(two_floats), 0x20000000) < 0){
-      fprintf (stderr,"Error in fpga_write_to_axi\n");
-      RD_ReadDeviceReg32m(dev, CNTRL_BAR, MasterMemRdTotalCnt, reg_val);
-      fprintf (stderr,"MasterMemRdTotalCnt 0x%x\n", reg_val);
-      RD_ReadDeviceReg32m(dev, CNTRL_BAR, FifoMemRdTotalCnt, reg_val);
-      fprintf (stderr,"FifoMemRdTotalCnt 0x%x\n", reg_val);
-      RD_ReadDeviceReg32m(dev, CNTRL_BAR, FifoMemWrTotalCnt, reg_val);
-      fprintf (stderr,"FifoMemWrTotalCnt 0x%x\n", reg_val);
-      RD_ReadDeviceReg32m(dev, CNTRL_BAR, MasterMemWrTotalCnt, reg_val);
-      fprintf (stderr,"MasterMemWrTotalCnt 0x%x\n", reg_val);
-      
-      return -2;
-   }
-   
-   if (use_coeffs_from_json) {
-
-      float *float_buf = (float *)wr_buf;
-
-      float_buf[0] = viscPF;         
-      float_buf[1] = viscPF_teta;    
-      float_buf[2] = B_Koeff;        
-      float_buf[3] = dt             ;
-      float_buf[4] = dt_viscPF_teta; 
-      float_buf[5] = dt_viscPF;      
-      float_buf[6] = sqrt_PF_xy;     
-      float_buf[7] = sqrt_PF_teta;   
-      float_buf[8] = R_MT;           
-      float_buf[9] = A_Koeff;        
-      float_buf[10] = b_lat;          
-      float_buf[11] = A_long_D;       
-      float_buf[12] = b_long_D;       
-      float_buf[13] = A_long_T;       
-      float_buf[14] = b_long_T;       
-      float_buf[15] = ro0;            
-      float_buf[16] = ro0_long;       
-      float_buf[17] = inv_ro0_long;   
-      float_buf[18] = c_lat;          
-      float_buf[19] = d_lat;          
-      float_buf[20] = C_Koeff;        
-      float_buf[21] = Rad;            
-      float_buf[22] = inv_ro0;        
-      float_buf[23] = clat_dlat_ro0;  
-      float_buf[24] = clong_dlong_ro0;
-      float_buf[25] = d_lat_ro0;      
-      float_buf[26] = d_long_ro0;     
-      float_buf[27] = fi_r;           
-      float_buf[28] = psi_r;          
-      float_buf[29] = fi_l;           
-      float_buf[30] = psi_l;          
-      float_buf[31] = rad_mon;        
-      float_buf[32] = teta0_D;        
-      float_buf[33] = teta0_T;           
-
-      if (fpga_write_to_axi(dev, wr_buf, 64*sizeof(float), 0x20000000 + coeffs_ddr_offset) < 0){
-         fprintf (stderr,"Error in fpga_write_to_axi\n");
-         RD_ReadDeviceReg32m(dev, CNTRL_BAR, MasterMemRdTotalCnt, reg_val);
-         fprintf (stderr,"MasterMemRdTotalCnt 0x%x\n", reg_val);
-         RD_ReadDeviceReg32m(dev, CNTRL_BAR, FifoMemRdTotalCnt, reg_val);
-         fprintf (stderr,"FifoMemRdTotalCnt 0x%x\n", reg_val);
-         RD_ReadDeviceReg32m(dev, CNTRL_BAR, FifoMemWrTotalCnt, reg_val);
-         fprintf (stderr,"FifoMemWrTotalCnt 0x%x\n", reg_val);
-         RD_ReadDeviceReg32m(dev, CNTRL_BAR, MasterMemWrTotalCnt, reg_val);
-         fprintf (stderr,"MasterMemWrTotalCnt 0x%x\n", reg_val);
-         
-         return -2;
-      }        
-   }
-   
-
-   //////////////////////////////////start hls///////////////////////////////////
-   RD_ReadDeviceReg32m(dev, CNTRL_BAR, COMMAND_REG, reg_val);
-   reg_val |= (1<<2);
-   RD_WriteDeviceReg32m(dev, CNTRL_BAR, COMMAND_REG, reg_val);
-   ///////////////////////////////////////////////////////////////////////////////
-   
-
-   //////////////////////////wait hls to finish///////////////////////////////////
-   cnt =0;
-   do{
-      usleep(1000);
-      RD_ReadDeviceReg32m(dev, CNTRL_BAR, COMMAND_REG, reg_val);
-      cnt++;
-      hls_done = (reg_val&(1<<3)) ? 1 : 0; 
-      
-   }while ((!hls_done)&&(cnt!=1000000));
-   //printf("Command reg is 0x%x\n", reg_val);
-   if (cnt ==1000000) {fprintf(stderr,"Timeout error\n"); return -1;}
-   ///////////////////////////////////////////////////////////////////////////////
-
-RD_ReadDeviceReg32m(dev, CNTRL_BAR, COMMAND_REG, reg_val);
-
-printf("hls done cnt = %d, reg_val = 0x%x\n",cnt, reg_val); 
-   
-   ///////////////////////read from ddr data(should be x)////////////////////////////////
-   if (fpga_read_from_axi(dev, 0x20000000,  SIZE_DWORD*sizeof(two_floats), rd_buf) < 0){
-      fprintf (stderr,"Error in fpga_read_from_axi\n");
-      RD_ReadDeviceReg32m(dev, CNTRL_BAR, MasterMemRdTotalCnt, reg_val);
-      fprintf (stderr,"MasterMemRdTotalCnt 0x%x\n", reg_val);
-      RD_ReadDeviceReg32m(dev, CNTRL_BAR, FifoMemRdTotalCnt, reg_val);
-      fprintf (stderr,"FifoMemRdTotalCnt 0x%x\n", reg_val);
-      RD_ReadDeviceReg32m(dev, CNTRL_BAR, FifoMemWrTotalCnt, reg_val);
-      fprintf (stderr,"FifoMemWrTotalCnt 0x%x\n", reg_val);
-      RD_ReadDeviceReg32m(dev, CNTRL_BAR, MasterMemWrTotalCnt, reg_val);
-      fprintf (stderr,"MasterMemWrTotalCnt 0x%x\n", reg_val);
-      return -3; 
-   }
-   
-
-   
-   // assert rand reset
-   //reg_val &= ~(1<<4);
-   // assert mt reset
-   //reg_val &= ~(1<<6);
-   // reset rand_enable flag
-   //reg_val &= ~(1<<7);
-   //RD_WriteDeviceReg32m(dev, CNTRL_BAR, COMMAND_REG, reg_val);  
-   
-
-   two_floats * buf_out = (two_floats *)rd_buf;
-   
-
-   k = 0;
-   for (i=0; i<13; i++)
-   for (j=0; j<N_d; j++) {
-      
-      w0 = buf_out[k++];
-      w1 = buf_out[k++]; 
-      
-      x_out[i][j] = w0.d0; 
-      y_out[i][j] = w0.d1; 
-      t_out[i][j] = w1.d0; 
-   }     
-
-   return 0;            
-
-}
 
 
    
@@ -726,19 +544,19 @@ printf("hls done cnt = %d, reg_val = 0x%x\n",cnt, reg_val);
 
 
 
-void print_coords(FILE *f_p, vector<vector<float> >  &  x, vector<vector<float> >  &  y, vector<vector<float> >  &  t)
+void print_coords(FILE *f_p, mt_coords_t  &mt_coords)
 {
    unsigned int i,j;
 
    for (i=0; i<13; i++) {
       for (j=0; j<N_d; j++)
-      fprintf(f_p,"%.3f\t  ", x[i][j]);
+      fprintf(f_p,"%.3f\t  ", mt_coords.x[i][j]);
 
       for (j=0; j<N_d; j++)
-      fprintf(f_p,"%.3f\t  ", y[i][j]);
+      fprintf(f_p,"%.3f\t  ", mt_coords.y[i][j]);
 
       for (j=0; j<N_d; j++)
-      fprintf(f_p,"%.3f\t  ", t[i][j]);
+      fprintf(f_p,"%.3f\t  ", mt_coords.t[i][j]);
       
    }
 
@@ -763,28 +581,32 @@ void print_coords_type(FILE *f_p, vector<vector<int> > &type_mol)
 
 
 
-void init_coords(vector<vector<float> >  &  x, vector<vector<float> >  &  y, vector<vector<float> >  &  t)
+// void init_coords(
+//    vector<vector<float> >  &  x, 
+//    vector<vector<float> >  &  y, 
+//    vector<vector<float> >  &  t)
+void init_coords(mt_coords_t  &mt_coords)
 {
    unsigned int i,j;
 
 
    // задание y координаты для нижней спирали
    for (i=0; i<13; i++)
-   y[i][0] = 2.0f*6/13*(i+1);
+   mt_coords.y[i][0] = 2.0f*6/13*(i+1);
 
 
    // задание y координат для остальных молекул до половины высоты трубочки
    for (j=1; j<N_d; j++)//-4
    for (i=0; i<13; i++)
-   y[i][j] = y[i][j-1] + 2.0f*Rad;
+   mt_coords.y[i][j] = mt_coords.y[i][j-1] + 2.0f*Rad;
 
 
    // задание x и teta координат так чтобы был цилиндр до половины высоты трубочки
    for (j=0; j<N_d; j++)//-5
    for (i=0; i<13; i++)  {
 
-      x[i][j] = 0.0;
-      t[i][j] = 0.0;
+      mt_coords.x[i][j] = 0.0;
+      mt_coords.t[i][j] = 0.0;
    }
 
 /*
@@ -814,9 +636,9 @@ void init_coords(vector<vector<float> >  &  x, vector<vector<float> >  &  y, vec
       type_mol[i][j] = 0;  *///  'D'
       
    for(j = NStop[i]; j < N_d; j++){
-      x[i][j] = 0;      
-      y[i][j] = -100.0;
-      t[i][j] = 0;
+      mt_coords.x[i][j] = 0;      
+      mt_coords.y[i][j] = -100.0;
+      mt_coords.t[i][j] = 0;
       type_mol[i][j] = -1; // '-'   
    }
    }
@@ -892,7 +714,7 @@ unsigned int min_N(unsigned int N_arr[13]) {
    return NMin;
 }
 
-void choose_to_shift_coords(vector<vector<float> >  &  x, vector<vector<float> >  &  y, vector<vector<float> >  &  t) {
+void choose_to_shift_coords(mt_coords_t &mt_coords) {
    unsigned int NStopMax = max_N(NStop), NStopMin = min_N(NStop);
    /*
    if (NStopMax >= N_d - 5 && NStopMin <= 16) { //Error
@@ -914,19 +736,19 @@ void choose_to_shift_coords(vector<vector<float> >  &  x, vector<vector<float> >
       //printf("UP!");
       }*/
       
-      if (NStopMax >= N_d - 5 && NStopMin <= 7) {  //Error
+   if (NStopMax >= N_d - 5 && NStopMin <= 7) {  //Error
       printf("Error!!! NStopMax >= N_d - 5 && NStopMin <= 16 N_d = %i \n", N_d);
    }
    if (NStopMax >= N_d - 6 && NStopMin <= 3) {  //Error
       printf("NStopMax >= N_d - 8 && NStopMin <= 3N_d = %i \n", N_d);
    }
    if (NStopMax >= N_d - 5)
-      shift_coords(x, y, t, false, 4);
+      shift_coords(mt_coords, false, 4);
    if (NStopMin <= 4){
       //printf("%iUOP:  \n",NStop[1]);
       //for (int i = 0; i < 10; i++)
       // printf("%iUOP: %f \n",i, y_2[1][i]);
-      shift_coords(x, y, t, true, 4);
+      shift_coords(mt_coords, true, 4);
       //for (int i = 0; i < 10; i++)
       // printf("%iUOP: %f \n",i, y_2[1][i]);
       //printf("%iUOP:  \n",NStop[1]);
@@ -934,7 +756,7 @@ void choose_to_shift_coords(vector<vector<float> >  &  x, vector<vector<float> >
       }
 }
 
-void shift_coords(vector<vector<float> >  &  x, vector<vector<float> >  &  y, vector<vector<float> >  &  t, bool up, const int shift)
+void shift_coords(mt_coords_t &mt_coords, bool up, const int shift)
 {
    unsigned int i,j;
    
@@ -942,77 +764,77 @@ void shift_coords(vector<vector<float> >  &  x, vector<vector<float> >  &  y, ve
       for (i=0; i<13; i++){
       for (j=NStart[i]; j<NStop[i]; j++){
          
-         x[i][j + shift] = x[i][j];
-         y[i][j + shift] = y[i][j];
-         t[i][j + shift] = t[i][j];
-         type_mol[i][j + shift] = type_mol[i][j];
+        mt_coords.x[i][j + shift] = mt_coords.x[i][j];
+        mt_coords.y[i][j + shift] = mt_coords.y[i][j];
+        mt_coords.t[i][j + shift] = mt_coords.t[i][j];
+        type_mol[i][j + shift] = type_mol[i][j];
       
       }
       NStop[i] += shift;
       }
-      printf("UP!%f", y[1][4+8]);
+      printf("UP!%f", mt_coords.y[1][4+8]);
       //NStart[i] += shift;
-      length += shift;
+      n_layers += shift;
       
       for (i=0; i<13; i++)
       for (j = shift-1; j >= 0; j-- ){
-      x[i][j] = x[i][j + 1];     //?need to test
-      y[i][j] = y[i][j + 1] - 2*Rad;
-      t[i][j] = 0;
-      type_mol[i][j] = 0;  //todo  was 'D'
+        mt_coords.x[i][j] = mt_coords.x[i][j + 1];     //?need to test
+        mt_coords.y[i][j] = mt_coords.y[i][j + 1] - 2*Rad;
+        mt_coords.t[i][j] = 0;
+        type_mol[i][j] = 0;  //todo  was 'D'
       }
       
    } else {
       for (i=0; i<13; i++){
       for (j=shift; j<NStop[i]; j++){
          
-         x[i][j - shift] = x[i][j];
-         y[i][j - shift] = y[i][j];
-         t[i][j - shift] = t[i][j];
+         mt_coords.x[i][j - shift] = mt_coords.x[i][j];
+         mt_coords.y[i][j - shift] = mt_coords.y[i][j];
+         mt_coords.t[i][j - shift] = mt_coords.t[i][j];
          type_mol[i][j - shift] = type_mol[i][j];
       
       }
       NStop[i] -= shift;
       }
       //NStart[i] -= shift;
-      length -= shift;
+      n_layers -= shift;
    }
    
    for (i=0; i<13; i++)
    for (j = NStop[i]; j < N_d; j++ ){
-      x[i][j] = 0;      
-      y[i][j] = -100.0;
-      t[i][j] = 0;
+      mt_coords.x[i][j] = 0;      
+      mt_coords.y[i][j] = -100.0;
+      mt_coords.t[i][j] = 0;
       type_mol[i][j] = -1; //todo was '-' 
    }
    
 }
 
-void addDimer (int i, vector<vector<float> >  &  x, vector<vector<float> >  &  y, vector<vector<float> >  &  t) {
+void addDimer (int i, mt_coords_t &mt_coords) {
    if (NStop[i] > N_d-1) return;
    //todo angle
-   x[i][NStop[i]] = x[i][NStop[i] - 1] + 2*Rad*sinf(t[i][NStop[i] - 1]);      
-   y[i][NStop[i]] = y[i][NStop[i] - 1] + 2*Rad*cosf(t[i][NStop[i] - 1]);
-   t[i][NStop[i]] = t[i][NStop[i]-1];
+   mt_coords.x[i][NStop[i]] = mt_coords.x[i][NStop[i] - 1] + 2*Rad*sinf(mt_coords.t[i][NStop[i] - 1]);      
+   mt_coords.y[i][NStop[i]] = mt_coords.y[i][NStop[i] - 1] + 2*Rad*cosf(mt_coords.t[i][NStop[i] - 1]);
+   mt_coords.t[i][NStop[i]] = mt_coords.t[i][NStop[i]-1];
    type_mol[i][NStop[i]] = 1; //T
    NStop[i]++;
-   x[i][NStop[i]] = x[i][NStop[i] - 1] + 2*Rad*sinf(t[i][NStop[i] - 1]);      
-   y[i][NStop[i]] = y[i][NStop[i] - 1] + 2*Rad*cosf(t[i][NStop[i] - 1]);
-   t[i][NStop[i]] = t[i][NStop[i]-1];
+   mt_coords.x[i][NStop[i]] = mt_coords.x[i][NStop[i] - 1] + 2*Rad*sinf(mt_coords.t[i][NStop[i] - 1]);      
+   mt_coords.y[i][NStop[i]] = mt_coords.y[i][NStop[i] - 1] + 2*Rad*cosf(mt_coords.t[i][NStop[i] - 1]);
+   mt_coords.t[i][NStop[i]] = mt_coords.t[i][NStop[i]-1];
    type_mol[i][NStop[i]] = 1; //T
    NStop[i]++;
    //type_mol[i][NStop[i]] = 0;  //todo  was 'D'      ??1045
 }
-
-void removeDimer (int i, vector<vector<float> >  &  x, vector<vector<float> >  &  y, vector<vector<float> >  &  t) {
-   y_2[i][NStop[i] - 1] = -100;
+void removeDimer (int i, mt_coords_t &mt_coords) {
+// void removeDimer (int i, vector<vector<float> >  &  x, vector<vector<float> >  &  y, vector<vector<float> >  &  t) {
+   mt_coords.y[i][NStop[i] - 1] = -100;
    type_mol[i][NStop[i] - 1] = -1;
-   y_2[i][NStop[i] - 2] = -100;
+   mt_coords.y[i][NStop[i] - 2] = -100;
    type_mol[i][NStop[i] - 2] = -1;
    NStop[i] -= 2;
 }
    //t1 = time elapsed, print to console
-void polimerization_algorithm(vector<vector<float> >  &  x, vector<vector<float> >  &  y, vector<vector<float> >  &  t, float t1) {
+void polimerization_algorithm(mt_coords_t &mt_coords, float t1) {
    srand((unsigned) time(NULL));
    unsigned long InitRnd = (t1-(int)t1)*1e+10 + rand();  
    Random Rnd_pol(InitRnd*1.7 + 0.35*rand());
@@ -1022,7 +844,7 @@ void polimerization_algorithm(vector<vector<float> >  &  x, vector<vector<float>
       gen_rand = Rnd_pol.genrand_real2();
    
       if(gen_rand <= attachment_probability){      
-            addDimer(i, x, y, t);
+            addDimer(i, mt_coords);
       }
       
       int dim_calc = 1;

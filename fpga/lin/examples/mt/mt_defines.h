@@ -3,16 +3,9 @@
 
 typedef unsigned int uint32_t;
 
-//#define HLS
 
-
-#ifdef HLS
-//#include "hls_stream.h"
-#include <ap_int.h>
-typedef ap_uint<1> bit;
-#else
 typedef char bit;
-#endif
+
 
 #define VAL2TO31	0x80000000
 #define VAL2TO31F	((float)(VAL2TO31))
@@ -115,6 +108,18 @@ const float Bz_2 = 0.458040982f;
 #define kinetic_step_attachment  (0.013f) / (2e-10)  //time step for kinetic algorithm, polymerization
 #define K_on 8.3f //on-rate constant for tubulin addition per MT, (uM*s)^-1
 #define concentration 10.0f //soluble tubulin concentration, uM 
+
+struct mt_coords_t {
+    vector<vector<float> >  x;
+    vector<vector<float> >  y;
+    vector<vector<float> >  t;
+};
+
+// struct mt_din_out_t {
+//     vector<vector<float> >  & x;
+//     vector<vector<float> >  & y;
+//     vector<vector<float> >  & t;
+// } ;
 
 
 #endif //MT_DEF_H

@@ -1,5 +1,7 @@
 #pragma once
 #include "rc47-api.h"
+#include "rc_47.h"
+#include "mt_defines.h"
 
 #include <iostream>
 
@@ -13,8 +15,10 @@
 
 #define SEED_REG 0x170
 
-#define SIZE_DWORD  0x80*(int)(((2*N_d*13)/(float)0x80+1)) 
-#define SIZE_BYTE    8*SIZE_DWORD   
+// #define SIZE_DWORD    (((4*N_d*13)+32)/32)
+
+// // #define SIZE_DWORD  0x80*(int)(((4*N_d*13) / (float)0x80+1)) 
+// #define SIZE_BYTE    4*SIZE_DWORD   
 
 #define coeffs_ddr_offset 8096
 
@@ -24,6 +28,11 @@
 
 namespace microtubule {
 
+  typedef struct {
+    float d0;
+    float d1; 
+  } two_floats;   
+
 
   class FpgaDev {
 
@@ -31,12 +40,21 @@ namespace microtubule {
 
     FpgaDev();
     int FindDevices(void);
+    int open(int board, int chip_select);
+    int close(int dev);
 
-    int open(int, int);
-    int StartRandomGenerator(int, int, unsigned int *);
-    int StopRandomGenerator(int);
-    int close(int);
+    int StartRandomGenerator(int dev, int L, unsigned int *seeds);
+    int StopRandomGenerator(int dev);    
 
+    int LoadCoeffs(int dev, int NumCoeffs, float *coeffs);
+
+    int CalcDynamics(  int                  dev,
+                       unsigned int         n_step,           //time steps to run 
+                       unsigned int         n_layers,        // number of layers to calculate. should be a multiple of 12
+                
+                       mt_coords_t          &mt_coords,
+                       vector<vector<int> > &type
+                     ) ; 
 
   private: 
 
