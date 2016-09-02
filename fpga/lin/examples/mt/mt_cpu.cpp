@@ -2,11 +2,8 @@
 
 extern  unsigned int N_d;
 
-//#define DYN_RAND
-// нету разницы между динамическим и статическим объявлением объектов uni_num
 
-FILE * f_r;
-vector<vector<bit> > type;//[13][N_d];		
+vector<vector<int> > type;//[13][N_d];		
 
 
 vector<vector<float> >lat_l_x;//[13][N_d+1];
@@ -200,8 +197,8 @@ void calc_grad_c(		unsigned int i1, 		// i index i?aaie iieaeoeu
 
 						unsigned int i2,			// i index eaaie iieaeoeu
 
-						bit type, 		// dimer type: 0 - 'D', 1 - 'T'
-						bit pos,		// monomer position in dimer: 0 - bottom, 1 - top
+						int type, 		// dimer type: 0 - 'D', 1 - 'T'
+						unsigned int pos,		// monomer position in dimer: 0 - bottom, 1 - top
 
 						float x_1,		// i?aaay iieaeoea		mol1
 						float y_1,
@@ -254,7 +251,6 @@ N_d_choose = N_d_chooseInput;
 	
 printf("flag_rand %d flag_seed %d\n",  flag_rand_c, flag_seed_c);
 
-f_r=fopen("rand_coords.txt","a");
 	
 
 	static int allocate = 0;
@@ -328,13 +324,8 @@ f_r=fopen("rand_coords.txt","a");
 	}
 
 
-	
-	
 
-	// for (int p=0; p<10;p++)
-	// printf("end gen %d %d\n",p,ar_uni[p].mti);
-fclose(f_r);	
-return 0;	
+	return 0;	
 }
 
 
@@ -349,7 +340,7 @@ int run_step_c(mt_coords_t  &mt_coords, int flag_rand_c)
 
 	// ia?aiao?, ii?aaaey?uee n?eoaai ee eiiaeooaaeuiia (ii aa?oeeaee) acaeiiaaenoaea ia?ao iieaeoeaie (iiiiia?aie) 
 	// aioo?e iaiie aaioaee (aeia?a) (pos = 0), eee ia?ao iiiiia?aie ec ?aciuo aeia?ia (pos = 1)
-	bit pos = 0; 
+	unsigned int pos = 0; 
 
 	// calculate gradients
 	for (i=0; i<13; i++){
@@ -493,8 +484,8 @@ void calc_grad_c(		unsigned int i1, 		// i index i?aaie iieaeoeu
 
 						unsigned int i2,			// i index eaaie iieaeoeu
 
-						bit type, 		// dimer type: 0 - 'D', 1 - 'T'
-						bit pos,		// monomer position in dimer: 0 - bottom, 1 - top
+						int type, 		// dimer type: 0 - 'D', 1 - 'T'
+						unsigned int pos,		// monomer position in dimer: 0 - bottom, 1 - top
 
 						float x_1,		// i?aaay iieaeoea		mol1
 						float y_1,

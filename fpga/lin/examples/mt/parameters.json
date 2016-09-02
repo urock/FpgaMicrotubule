@@ -1,12 +1,6 @@
 // Configuration options
 {
-    "use_json": true, 
-
-    // comments can start at new line
-    "A" : 0.456,
-    // csdfsd 
-    "B" : 4.34782596e-5,
-    "C" : -23,
+    "use_json": true,      // flag to use coeeficients from this file
 
     // (kcal/mol)*(s/nm^2)
    "viscPF"          :     8.6e-7,     
@@ -43,6 +37,14 @@
    "psi_l"           :     -1.339725,
    "rad_mon"         :     2.0,
    "teta0_D"         :     0.2, //rad
-   "teta0_T"         :     0.0    
+   "teta0_T"         :     0.0,
+
+   "icf"             :     "MT_input_coords.txt", 
+   "ocf_cpu"         :     "MT_coords_CPU.txt",
+   "ocf_fpga"        :     "MT_coords_FPGA.txt",
+   "olf_cpu"         :     "len_MT_coords_CPU.txt",
+   "olf_fpga"        :     "len_MT_coords_FPGA.txt",
+   "otf_cpu"         :     "type_MT_coords_CPU.txt",
+   "otf_fpga"        :     "type_MT_coords_FPGA.txt"      
 
 }

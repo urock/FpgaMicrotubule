@@ -5,6 +5,7 @@
 #include <fstream>
 #include <string>  
 #include <vector>
+#include "fpga.h"
 
 using namespace std;
 
@@ -20,9 +21,15 @@ class mt {
 
 public:
 
-  mt(string json_name);
+  mt(string json_name, unsigned int N_d_in);
+  mt(FpgaDev *Fpga, string json_name, unsigned int N_d_in);
+
+  bool UseJsonCoeefs(float *cooefs_buf_out); 
 
 private:
+
+  void init(string json_name, unsigned int N_d_in); 
+  bool use_coeffs_from_json;
 
   // coefficients
   float viscPF;   
@@ -61,11 +68,25 @@ private:
   float teta0_T; 
 
 
-  double attachment_probability; //Probability per protofi lament
+  double attachment_probability;    //Probability per protofilament
   double hydrolysis_probability;
+
+  unsigned int N_d;
+  unsigned int n_layers;      //length of MT with counting shifts/ should be a multiple of 3
+  unsigned int NStop[13];     //numbers of last monomers;
+  unsigned int NStart[13];    //numbers of first monomers;
 
   mt_coords_t coords;
   vector<vector<int> > type_mol;
+
+  FpgaDev  *Fpga;
+
+  FILE *icf;    // input coords file
+  FILE *ocf;    // output coords file
+  FILE *olf;    // output length file
+  FILE *otf;    // output type file
+
+
 
 };
 

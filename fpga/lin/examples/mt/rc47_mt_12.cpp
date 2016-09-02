@@ -13,10 +13,12 @@
 #include "rc_47.h"
 #include "rand.h"
 #include "fpga.h"
-#include "mt_defines.h"
+#include "mt.h"
+// #include "mt_defines.h"
 
-#include "jsoncpp/json/json-forwards.h"
-#include "jsoncpp/json/json.h"
+
+// #include "jsoncpp/json/json-forwards.h"
+// #include "jsoncpp/json/json.h"
 
 #include <fstream>
 #include <iostream>
@@ -28,16 +30,9 @@ using namespace microtubule;
 void init_coords(mt_coords_t  &mt_coords);
 
 
-struct pci_device pd[MAX_PCIE_DEVICES];
-struct rc47_board_t rc47[MAX_RC47_BOARDS];
-struct pci_device *pd_ptr;
-
-unsigned int   *wr_buf, *wr_buf_free;
-unsigned int   *rd_buf, *rd_buf_free;
 
 
-
-unsigned int n_layers; //length of MT with counting shifts/ should be a multiple of 12
+unsigned int n_layers; //length of MT with counting shifts/ should be a multiple of 3
 unsigned int NStop[13]; //numbers of last monomers;
 unsigned int NStart[13];   //numbers of first monomers;
 
@@ -87,68 +82,6 @@ double attachment_probability = concentration * K_on * kinetic_step_attachment *
 double hydrolysis_probability = K_hydrolysis * kinetic_step_hydrolysis * dt;
 
 
-int load_coeffs_from_json(void)
-{
-
-   Json::Value root;
-
-   std::ifstream config_doc("coefficients.json", std::ifstream::binary);
-   config_doc >> root;  
-
-
-   use_coeffs_from_json = root.get("use_coeffs_from_json", false).asBool();
-
-   if (use_coeffs_from_json)
-      printf("Using coeeficients from json\n");
-   else {
-      printf("Using default coeeficients\n");
-      return 0; 
-   }
-
-
-   viscPF            = root.get("viscPF", 0).asFloat();
-   viscPF_teta       = root.get("viscPF_teta", 0).asFloat();
-   B_Koeff           = root.get("B_Koeff", 0).asFloat();
-   dt                = root.get("dt", 0).asFloat();
-   dt_viscPF_teta    = root.get("dt_viscPF_teta", 0).asFloat();
-   dt_viscPF         = root.get("dt_viscPF", 0).asFloat();
-   sqrt_PF_xy        = root.get("sqrt_PF_xy", 0).asFloat();
-   sqrt_PF_teta      = root.get("sqrt_PF_teta", 0).asFloat();
-   R_MT              = root.get("R_MT", 0).asFloat();
-   A_Koeff           = root.get("A_Koeff", 0).asFloat();
-   b_lat             = root.get("b_lat", 0).asFloat();
-   A_long_D          = root.get("A_long_D", 0).asFloat();
-   b_long_D          = root.get("b_long_D", 0).asFloat();
-   A_long_T          = root.get("A_long_T", 0).asFloat();
-   b_long_T          = root.get("b_long_T", 0).asFloat();
-   ro0               = root.get("ro0", 0).asFloat();
-   ro0_long          = root.get("ro0_long", 0).asFloat();
-   inv_ro0_long      = root.get("inv_ro0_long", 0).asFloat();
-   c_lat             = root.get("c_lat", 0).asFloat();
-   d_lat             = root.get("d_lat", 0).asFloat();
-   C_Koeff           = root.get("C_Koeff", 0).asFloat();
-   Rad               = root.get("Rad", 0).asFloat();
-   inv_ro0           = root.get("inv_ro0", 0).asFloat();
-   clat_dlat_ro0     = root.get("clat_dlat_ro0", 0).asFloat();
-   clong_dlong_ro0   = root.get("clong_dlong_ro0", 0).asFloat();
-   d_lat_ro0         = root.get("d_lat_ro0", 0).asFloat();
-   d_long_ro0        = root.get("d_long_ro0", 0).asFloat();
-   fi_r              = root.get("fi_r", 0).asFloat();
-   psi_r             = root.get("psi_r", 0).asFloat();
-   fi_l              = root.get("fi_l", 0).asFloat();
-   psi_l             = root.get("psi_l", 0).asFloat();
-   rad_mon           = root.get("rad_mon", 0).asFloat();
-   teta0_D           = root.get("teta0_D", 0).asFloat();
-   teta0_T           = root.get("teta0_T", 0).asFloat();
-   
-
-
-   return 0; 
-}
-
-// vector<vector<float> > x_1;
-// vector<vector<float> > y_1;
-// vector<vector<float> > t_1;
 
 mt_coords_t mt_coords_f;
 mt_coords_t mt_coords_c;
@@ -196,13 +129,12 @@ unsigned int N_d;
 
 void print_usage(char *argv[])
 {
-   printf("Usage:\n");
-   printf("\n--------------------------------------------------------------------------\n");
-   printf("To run HLS TEST:\nsudo %s -b board -v chip_select -N N_d -c=flag_compare -r=flar_rand -f output file name]\n", argv[0]);   
-   printf("board: 0-1\n");
-   printf("chip_select: 0-3\n");
-   printf("N_d: number of molecules in one filament\n");
-   printf("\n--------------------------------------------------------------------------\n");
+   cerr << "\nUsage:\n";
+   cerr << "sudo " << argv[0] << " -j json_file -b board -v chip_select -N N_d -c=flag_compare -r=flar_rand -f output file name]\n";   
+   cerr << "json_file - input file with coefficients\n";
+   cerr << "board: 0-1\n";
+   cerr << "chip_select: 0-3\n";
+   cerr << "N_d: number of molecules in one filament\n" << endl; 
 }
 
 
@@ -214,12 +146,16 @@ int main(int argc, char *argv[])
 
   int opt;
 
+  string json_file; 
 
-  while ((opt = getopt(argc, argv, "b:v:N:f:cr")) != -1) {
+  bool nd_set = false; 
+
+  while ((opt = getopt(argc, argv, "j:b:v:N:f:cr")) != -1) {
     switch (opt) {
+      case 'j': json_file = string(optarg); break;
       case 'b': fpga_board = stoi(optarg); break;
       case 'v': fpga_chip = stoi(optarg); break;
-      case 'N': N_d = stoi(optarg); break;
+      case 'N': N_d = stoi(optarg); nd_set =  true; break;
       case 'f': coord_out_file = string(optarg); flag_file = true; break;
       case 'c': flag_compare = true; break;
       case 'r': flag_rand = true; break;
@@ -227,7 +163,15 @@ int main(int argc, char *argv[])
     }
   }
 
+  if (!nd_set) {
+    cerr << "N_d not set!" << endl;
+    print_usage(argv); 
+    return -1; 
+  }
+
   FpgaDev Fpga;
+  mt      MtFpga(&Fpga, json_file, N_d);
+  mt      MtCpu(json_file, N_d);
 
   if (Fpga.FindDevices() < 0) {
     cerr << "Error in FindDevices\n";
@@ -241,6 +185,24 @@ int main(int argc, char *argv[])
     cerr << "Error in Fpga Open Device\n";
     return -1;      
   }
+
+
+
+
+
+
+
+  float coeff_buf[Nc];
+
+  if (MtFpga.UseJsonCoeefs(coeff_buf)) {
+
+    for (int i = 0; i < Nc; ++i) {
+      cout << coeff_buf[i] << endl;
+    }
+
+    Fpga.LoadCoeffs(dev, Nc, coeff_buf);       
+
+  }  
   
   if (Fpga.close(dev) < 0) {
     cerr << "Error in Fpga Close Device\n";
@@ -248,57 +210,8 @@ int main(int argc, char *argv[])
   }
 
 
-
   return 0;
 
-   if (load_coeffs_from_json() < 0) {
-      printf("Error loading coefficients from json file\n");
-      return -1; 
-   }
-
- 
-   if (use_coeffs_from_json) {
-
-      float float_buf[34];
-
-      float_buf[0] = viscPF;         
-      float_buf[1] = viscPF_teta;    
-      float_buf[2] = B_Koeff;        
-      float_buf[3] = dt             ;
-      float_buf[4] = dt_viscPF_teta; 
-      float_buf[5] = dt_viscPF;      
-      float_buf[6] = sqrt_PF_xy;     
-      float_buf[7] = sqrt_PF_teta;   
-      float_buf[8] = R_MT;           
-      float_buf[9] = A_Koeff;        
-      float_buf[10] = b_lat;          
-      float_buf[11] = A_long_D;       
-      float_buf[12] = b_long_D;       
-      float_buf[13] = A_long_T;       
-      float_buf[14] = b_long_T;       
-      float_buf[15] = ro0;            
-      float_buf[16] = ro0_long;       
-      float_buf[17] = inv_ro0_long;   
-      float_buf[18] = c_lat;          
-      float_buf[19] = d_lat;          
-      float_buf[20] = C_Koeff;        
-      float_buf[21] = Rad;            
-      float_buf[22] = inv_ro0;        
-      float_buf[23] = clat_dlat_ro0;  
-      float_buf[24] = clong_dlong_ro0;
-      float_buf[25] = d_lat_ro0;      
-      float_buf[26] = d_long_ro0;     
-      float_buf[27] = fi_r;           
-      float_buf[28] = psi_r;          
-      float_buf[29] = fi_l;           
-      float_buf[30] = psi_l;          
-      float_buf[31] = rad_mon;        
-      float_buf[32] = teta0_D;        
-      float_buf[33] = teta0_T;           
-
-      Fpga.LoadCoeffs(dev, 34, float_buf);       
-   }
-    
 
    double dt_c[N];
    double dt_f[N];
@@ -825,6 +738,10 @@ void addDimer (int i, mt_coords_t &mt_coords) {
    NStop[i]++;
    //type_mol[i][NStop[i]] = 0;  //todo  was 'D'      ??1045
 }
+
+
+
+// not used function??
 void removeDimer (int i, mt_coords_t &mt_coords) {
 // void removeDimer (int i, vector<vector<float> >  &  x, vector<vector<float> >  &  y, vector<vector<float> >  &  t) {
    mt_coords.y[i][NStop[i] - 1] = -100;
