@@ -1,6 +1,6 @@
 #include "mt_fpga.h"
 
-int N_d_choose = 0;
+unsigned int N_d_choose = 0;
 
 float viscPF       		= viscPF_d;       		
 float viscPF_teta  		= viscPF_teta_d;  		
@@ -41,7 +41,7 @@ float teta0_T 			= teta0_T_d;
 int mt_top(
 		uint32_t InputLength,	
 		uint32_t p1,
-		uint32_t p2,
+		uint32_t p2,						// N_d (should be multiple of 3) max is N_d = 216
 		uint32_t offset_i,					// flag to load coeffs from ddr
 		uint32_t offset_o,		
 		uint32_t cp_size,		
@@ -75,42 +75,10 @@ int mt_top(
 #pragma HLS INTERFACE ap_ack port=stream3
 #pragma HLS INTERFACE ap_ack port=stream4
 #pragma HLS INTERFACE ap_ack port=stream5
+	
+	N_d_choose = p2;
 
 
-	switch(p2) {
-		case 0:
-			N_d_choose = 12;
-			break;
-		case 1:
-			N_d_choose = 24;
-			break;
-		case 2:
-			N_d_choose = 36;//
-			break;
-		case 3:
-			N_d_choose = 48;
-			break;
-		case 4:
-			N_d_choose = 60;
-			break;
-		case 5:
-			N_d_choose = 72;
-			break;
-		case 6:
-			N_d_choose = 84;
-			break;
-		case 7:
-			N_d_choose = 108;
-			break;
-		case 8:
-			N_d_choose = 156;
-			break;
-		case 9:
-			N_d_choose = 216;
-			break;
-		default:
-			N_d_choose = 36;	
-	}
 	
 	two_floats tmp_buf[2*N_d];
 
