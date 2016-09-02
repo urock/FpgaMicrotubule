@@ -1,0 +1,20 @@
+// Configuration options
+{
+    // Default encoding for text
+    "my-encoding" : "UTF-8",
+
+    // Plug-ins loaded at start-up
+    "my-plug-ins" : [
+        "python",
+        "c++",
+        "ruby"
+        ],
+
+    // comments can start at new line
+    "A" : 0.456,
+    "B" : 4.34782596e-5,
+    "C" : -23,
+
+    // Tab indent size
+    "my-indent" : { "length" : 3,  }
+}

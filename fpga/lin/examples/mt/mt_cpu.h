@@ -12,21 +12,15 @@ using std::vector;
 
 
 
-int mt_cpu(	int		n_step,				// iieiia eiee?anoai oaaia ii a?aiaie
-			int 	load_coords,		//
-			int		flag_rand_c,
-			int		flag_seed_c,
+int mt_cpu( int     n_step,             // iieiia eiee?anoai oaaia ii a?aiaie
+            int     flag_rand_c,
+            int     flag_seed_c,
 
-			int seeds[],
+            unsigned int seeds[],
 
-			vector<vector<float> >  & x_in,		// aoiaiua ianneau eii?aeiao, eniieuco?ony i?e load_coords = 1
-			vector<vector<float> >  & y_in,
-			vector<vector<float> >  & t_in,
+            mt_coords_t  &mt_coords,
 
-			vector<vector<float> >  & x_out,		// auoiaiua ianneau eii?aeiao
-			vector<vector<float> >  & y_out,
-			vector<vector<float> >  & t_out,
-			int N_d_chooseInput
+            unsigned int N_d_chooseInput
 );
 
 
@@ -38,6 +32,6 @@ int mt_cpu(	int		n_step,				// iieiia eiee?anoai oaaia ii a?aiaie
 #define LOWER_MASK 0x7fffffffUL /* least significant r bits */
 
 #define pii 3.14159265359f
-			
+      
 
 #endif //MT_CPU_H

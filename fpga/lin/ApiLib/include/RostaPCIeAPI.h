@@ -24,7 +24,7 @@
 #include "rosta-ioctl.h"
 //#include "rosta-common.h"
 
-typedef unsigned long long uint64_t; 
+//typedef unsigned long long uint64_t; 
 
 // comment this to turn off debug printf
 #define ROSTA_DEBUG
@@ -37,7 +37,7 @@ typedef unsigned long long uint64_t;
 
 
 #define MAX_PCIE_DEVICES	128
-#define MAX_RC47_BOARDS		12
+// #define MAX_RC47_BOARDS		12
 
 
 #define MAX_DMA_TRANSFER_LENGTH		0x400000		// 4 MB
