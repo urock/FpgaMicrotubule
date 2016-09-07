@@ -4,6 +4,10 @@ using namespace std;
 
 namespace microtubule {
 
+  const unsigned int test_seeds[NUM_SEEDS] = { 0x10000000, 0x20000000, 0x30000000, 0x40000000, 0x50000000, 
+                           0x60000000, 0x70000000, 0x80000000, 0x90000000, 0xA0000000  };
+
+
   void mt::init(string json_name, unsigned int N_d_in) {
 
     N_d = N_d_in;
@@ -17,6 +21,13 @@ namespace microtubule {
 
     use_coeffs_from_json = false;
     use_coeffs_from_json = root.get("use_json", false).asBool();
+
+
+    brownian_en = root.get("brownian_en", false).asBool(); 
+    kinetics_en = root.get("kinetics_en", false).asBool(); 
+    const_seeds = root.get("const_seeds", false).asBool();
+
+
 
     if (use_coeffs_from_json) {
       printf("Using coeeficients from json\n");
@@ -130,19 +141,41 @@ namespace microtubule {
     if (Fpga) {
 
       ocf_name = root.get("ocf_fpga", "").asString();
+      olf_name = root.get("olf_fpga", "").asString();
+      otf_name = root.get("otf_fpga", "").asString();
 
     } else {
 
       ocf_name = root.get("ocf_cpu", "").asString();
+      olf_name = root.get("olf_fpga", "").asString();
+      otf_name = root.get("otf_fpga", "").asString();
     }
 
-    std::cout << "icf_name = " << icf_name << std::endl;
-    std::cout << "ocf_name = " << ocf_name << std::endl;
+    //icf = fopen(icf_name, "r");
+    ocf = fopen(ocf_name, "w");
+    olf = fopen(olf_name, "w");
+    otf = fopen(otf_name, "w");
 
-  // FILE *icf;    // input coords file
-  // FILE *ocf;    // output coords file
-  // FILE *olf;    // output length file
-  // FILE *otf;    // output type file
+    if ((ocf == NULL) || (olf == NULL) || (otf == NULL))
+      throw; 
+
+    for(int i = 0; i < 13; ++i) {
+      NStop[i] = N_d - 1;
+      NStart[i] = NStop[i] - nullHigh;
+    }
+    
+    n_layers = NStop[0] - NStart[0];
+
+    if (brownian_en) {
+      // set seed vals
+      for (int i =0; i < NUM_SEEDS; ++i){
+        if (const_seeds)
+          seeds[i] = test_seeds[i];
+        else
+          seeds[i]=(unsigned int)rand();
+      }
+
+    }    
 
   }
 

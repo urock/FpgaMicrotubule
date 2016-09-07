@@ -106,7 +106,14 @@ const float Bz_2 = 0.458040982f;
 #define concentration 10.0f //soluble tubulin concentration, uM 
 
 
-// namespace microtubule {
+#define nullHigh 12        //indent from top at the beginning
+
+#define absTol    0.001f
+#define relTol    0.001f
+
+#define cut_off 1.0     //for deattach
+
+
 
 struct mt_coords_t {
     vector<vector<float> >  x;
@@ -114,10 +121,5 @@ struct mt_coords_t {
     vector<vector<float> >  t;
 };
 
-
-
-// class 
-
-// }
 
 #endif //MT_DEF_H

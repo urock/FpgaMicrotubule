@@ -1,6 +1,6 @@
 // Configuration options
 {
-    "use_json": true,      // flag to use coeeficients from this file
+    "use_json"       :     true,      // flag to use coeeficients from this file
 
     // (kcal/mol)*(s/nm^2)
    "viscPF"          :     8.6e-7,     
@@ -45,6 +45,10 @@
    "olf_cpu"         :     "len_MT_coords_CPU.txt",
    "olf_fpga"        :     "len_MT_coords_FPGA.txt",
    "otf_cpu"         :     "type_MT_coords_CPU.txt",
-   "otf_fpga"        :     "type_MT_coords_FPGA.txt"      
+   "otf_fpga"        :     "type_MT_coords_FPGA.txt",
 
+   "brownian_en"     :     true,
+   "kinetics_en"     :     true,
+   "calc_steps"      :     1000,    // calc dynamics steps, write to file every "calc_dynamic" steps 
+   "const_seeds"     :     true     // set to true to get determenistic dynamics every program launch
 }

@@ -30,6 +30,9 @@ private:
 
   void init(string json_name, unsigned int N_d_in); 
   bool use_coeffs_from_json;
+  bool brownian_en;
+  bool kinetics_en;
+  bool const_seeds; 
 
   // coefficients
   float viscPF;   

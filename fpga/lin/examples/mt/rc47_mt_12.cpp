@@ -103,12 +103,7 @@ const unsigned int test_seeds[NUM_SEEDS] = { 0x10000000, 0x20000000, 0x30000000,
 
 #define TOTAL_STEPS        (STEPS_TO_WRITE*N)      
 
-#define absTol    0.001f
-#define relTol    0.001f
 
-#define cut_off 1.0     //for deattach
-
-#define nullHigh 10        //indent from top at the beginning
 
 /////////////////////////////////////////////////
 
@@ -123,18 +118,19 @@ bool flag_rand = false;
 bool flag_file = false; 
 char *out_file;
 
-string coord_out_file; 
  
 unsigned int N_d;
 
 void print_usage(char *argv[])
 {
-   cerr << "\nUsage:\n";
-   cerr << "sudo " << argv[0] << " -j json_file -b board -v chip_select -N N_d -c=flag_compare -r=flar_rand -f output file name]\n";   
-   cerr << "json_file - input file with coefficients\n";
-   cerr << "board: 0-1\n";
-   cerr << "chip_select: 0-3\n";
-   cerr << "N_d: number of molecules in one filament\n" << endl; 
+  cerr << "\nUsage:\n";
+  cerr << "sudo " << argv[0] << " -j json_file -b board -v cs -N N_d -c -i it\n";   
+  cerr << "-j json_file - input file with coefficients\n";
+  cerr << "-b fpga board: [0-1]\n";
+  cerr << "-v cs: fpga chip_select [0-3]\n";
+  cerr << "-N N_d: number of molecules in one filament\n";
+  cerr << "-c: if set compares fpga data with cpu\n";
+  cerr << "-i number of kinetic steps\n" << endl; 
 }
 
 
@@ -150,15 +146,14 @@ int main(int argc, char *argv[])
 
   bool nd_set = false; 
 
-  while ((opt = getopt(argc, argv, "j:b:v:N:f:cr")) != -1) {
+  while ((opt = getopt(argc, argv, "j:b:v:N:c")) != -1) {
     switch (opt) {
       case 'j': json_file = string(optarg); break;
       case 'b': fpga_board = stoi(optarg); break;
       case 'v': fpga_chip = stoi(optarg); break;
       case 'N': N_d = stoi(optarg); nd_set =  true; break;
-      case 'f': coord_out_file = string(optarg); flag_file = true; break;
       case 'c': flag_compare = true; break;
-      case 'r': flag_rand = true; break;
+      case 'i': k_steps = stoi(optarg); break; 
       default: print_usage(argv); break;
     }
   }
@@ -169,9 +164,17 @@ int main(int argc, char *argv[])
     return -1; 
   }
 
+  if ((N_d % 3) != ) {
+    cerr << "N_d should be a multiple of 3. Exitting" << endl;
+    return -2; 
+  }
+
   FpgaDev Fpga;
   mt      MtFpga(&Fpga, json_file, N_d);
-  mt      MtCpu(json_file, N_d);
+  
+  if (flag_compare) {
+    mt MtCpu(json_file, N_d);
+  }
 
   if (Fpga.FindDevices() < 0) {
     cerr << "Error in FindDevices\n";
