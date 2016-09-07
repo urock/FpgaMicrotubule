@@ -1,4 +1,7 @@
-﻿ver 0.23
+﻿ver 0.24
+	N_d_choose is set from register. should be mult of 3
+
+ver 0.23
 	load coeffs from ddr
 
 

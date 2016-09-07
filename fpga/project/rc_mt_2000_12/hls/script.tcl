@@ -14,5 +14,5 @@ create_clock -period 5 -name default
 source "./src/directives.tcl"
 #csim_design
 csynth_design
-export_design -format ip_catalog -vendor "urock" -version "0.23"
+export_design -format ip_catalog -vendor "urock" -version "0.24"
 
