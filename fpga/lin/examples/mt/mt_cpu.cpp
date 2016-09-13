@@ -65,85 +65,14 @@ int run_step_c(mt_coords_t  &mt_coords, int flag_rand_c);
 unsigned int N_d_choose = 0;
 
 
-class uni_num {
-
-
-
-
-public:
-//	uni_num(unsigned long seed) {
-//		mti=N_period+1;
-//		init_genrand(seed);
-//		valid = false;
-//	};
-	float get_uni_num(void);
-	void init_genrand(unsigned int seed);
-
-
-	unsigned int mt[N_period]; /* the array for the state vector  */
-	int mti;
-
-};
 
 
 
 
 
-void uni_num::init_genrand(unsigned int seed)
-{
-    mt[0]= seed & 0xffffffffUL;
-    for (mti=1; mti<N_period; mti++) {
-        mt[mti] =
-	    (1812433253UL * (mt[mti-1] ^ (mt[mti-1] >> 30)) + mti);
-        mt[mti] &= 0xffffffffUL;
-        /* for >32 bit machines */
-    }
 
 
-};
-
-float uni_num::get_uni_num()
-{
-    unsigned int y;
-    static unsigned int mag01[2]={0x0UL, MATRIX_A};
-    /* mag01[x] = x * MATRIX_A  for x=0,1 */
-
-    if (mti >= N_period) { /* generate N_period words at one time */
-        int kk;
-
-
-        for (kk=0;kk<N_period-M_period;kk++) {
-            y = (mt[kk]&UPPER_MASK)|(mt[kk+1]&LOWER_MASK);
-            mt[kk] = mt[kk+M_period] ^ (y >> 1) ^ mag01[y & 0x1UL];
-        }
-        for (;kk<N_period-1;kk++) {
-            y = (mt[kk]&UPPER_MASK)|(mt[kk+1]&LOWER_MASK);
-            mt[kk] = mt[kk+(M_period-N_period)] ^ (y >> 1) ^ mag01[y & 0x1UL];
-        }
-        y = (mt[N_period-1]&UPPER_MASK)|(mt[0]&LOWER_MASK);
-        mt[N_period-1] = mt[M_period-1] ^ (y >> 1) ^ mag01[y & 0x1UL];
-
-        mti = 0;
-    }
-
-    y = mt[mti];
-    mti=mti+1;
-
-
-    /* Tempering */
-    y ^= (y >> 11);
-    y ^= (y << 7) & 0x9d2c5680UL;
-    y ^= (y << 15) & 0xefc60000UL;
-    y ^= (y >> 18);
-
-	y = (y==0) ? 1 : y;
-
-   return y*(1.0/4294967296.0);
-};
-
-
-
-uni_num ar_uni[10];
+UniRandom ar_uni[10];
 
 
 int is_nan(float val){
@@ -152,15 +81,12 @@ int is_nan(float val){
 
 int get_norm_vals(int index, float *n0, float *n1) {
 
-
-
 	float r1, r2;
 	float logfs;
 	float mults, mults1;
 	float rho;
 	float d0, d1;
 	float sinfs, cosfs;
-
 
 
 	r1 = ar_uni[2*index].get_uni_num();

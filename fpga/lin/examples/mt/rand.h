@@ -13,25 +13,43 @@
 namespace microtubule {
 
 
-class Random
-{     
-  public:
-    Random(unsigned long s) {
-      mti=N_period+1;
-      init_genrand(s);
-      r1 = 0; r2 = 0; s = 0; rho = 0;
-      valid = false;
-    };
-    ~Random(){};      
-    float Normal_dist(void);
-    double genrand_real2(void);
+// class Random
+// {     
+//   public:
+//     UniRandom(unsigned long s) {
+//       init_genrand(s);
+//       r1 = 0; r2 = 0; s = 0; rho = 0;
+//       valid = false;
+//     };
+//     ~UniRandom(){};      
+//     float Normal_dist(void);
+//     double genrand_real2(void);
 
-  private:
-    float r1, r2, s, rho;
-    bool valid;
-    void init_genrand(unsigned long s);
-    unsigned long mt[N_period]; /* the array for the state vector  */
-    int mti;             /* mti==N_period+1 means mt[N_period] is not initialized */
+//   private:
+//     float r1, r2, s, rho;
+//     bool valid;
+//     void init_genrand(unsigned long s);
+//     unsigned long mt[N_period]; /* the array for the state vector  */
+//     int mti;             /* mti==N_period+1 means mt[N_period] is not initialized */
+// };
+
+
+class UniRandom {
+public:
+  UniRandom(unsigned int seed) {
+    init_genrand(seed);
+    r1 = 0; r2 = 0; s = 0; rho = 0;
+    valid = false;    
+  }
+  float get_uni_num(void);
+  float Normal_dist(void);
+  
+private:
+  float r1, r2, s, rho;
+  bool valid;  
+  void init_genrand(unsigned int seed);
+  unsigned int mt[N_period]; /* the array for the state vector  */
+  int mti;  
 };
 
 

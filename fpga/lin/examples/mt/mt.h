@@ -14,6 +14,8 @@ using namespace std;
 #include "jsoncpp/json/json-forwards.h"
 #include "jsoncpp/json/json.h"
 
+#define STEPS_TO_WRITE     500         // steps in fpga. was 1000 ; 5000000*100 to almost destroy  //500000
+
 namespace microtubule {
 
 
@@ -24,11 +26,14 @@ public:
   mt(string json_name, unsigned int N_d_in);
   mt(FpgaDev *Fpga, string json_name, unsigned int N_d_in);
 
-  bool UseJsonCoeefs(float *cooefs_buf_out); 
+  
 
 private:
 
   void init(string json_name, unsigned int N_d_in); 
+  bool UseJsonCoeefs(float *cooefs_buf_out); 
+  int InitCoords(void); 
+
   bool use_coeffs_from_json;
   bool brownian_en;
   bool kinetics_en;
@@ -83,12 +88,15 @@ private:
   vector<vector<int> > type_mol;
 
   FpgaDev  *Fpga;
+  int       dev;  // fpga device handle
+  bool      use_fpga; 
 
   FILE *icf;    // input coords file
   FILE *ocf;    // output coords file
   FILE *olf;    // output length file
   FILE *otf;    // output type file
 
+  unsigned int seeds[NUM_SEEDS];  // for random number generator used in dyncamics
 
 
 };

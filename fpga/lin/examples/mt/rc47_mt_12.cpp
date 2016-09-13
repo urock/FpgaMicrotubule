@@ -27,59 +27,13 @@
 using namespace std;
 using namespace microtubule;
 
-void init_coords(mt_coords_t  &mt_coords);
-
-
 
 
 unsigned int n_layers; //length of MT with counting shifts/ should be a multiple of 3
 unsigned int NStop[13]; //numbers of last monomers;
 unsigned int NStart[13];   //numbers of first monomers;
 
-int flag_seed = 1;
 
-
-// coefficients
-float viscPF            = viscPF_d;             
-float viscPF_teta       = viscPF_teta_d;        
-float B_Koeff        = B_Koeff_d;         
-float dt             = dt_d;           
-float dt_viscPF_teta = dt_viscPF_teta_d;  
-float dt_viscPF         = dt_viscPF_d;       
-float sqrt_PF_xy     = sqrt_PF_xy_d;      
-float sqrt_PF_teta      = sqrt_PF_teta_d;       
-float R_MT           = R_MT_d;            
-float A_Koeff        = A_Koeff_d;         
-float b_lat          = b_lat_d;           
-float A_long_D          = A_long_D_d;        
-float b_long_D          = b_long_D_d;        
-float A_long_T          = A_long_T_d;        
-float b_long_T          = b_long_T_d;        
-float ro0            = ro0_d;             
-float ro0_long       = ro0_long_d;        
-float inv_ro0_long   = inv_ro0_long_d;    
-float c_lat          = c_lat_d;           
-float d_lat          = d_lat_d;           
-float C_Koeff        = C_Koeff_d;         
-float Rad            = Rad_d;             
-float inv_ro0        = inv_ro0_d;         
-float clat_dlat_ro0     = clat_dlat_ro0_d;      
-float clong_dlong_ro0   = clong_dlong_ro0_d; 
-float d_lat_ro0         = d_lat_ro0_d;       
-float d_long_ro0     = d_long_ro0_d;      
-float fi_r           = fi_r_d;            
-float psi_r          = psi_r_d;        
-float fi_l           = fi_l_d;         
-float psi_l          = psi_l_d;           
-float rad_mon        = rad_mon_d;         
-float teta0_D        = teta0_D_d;         
-float teta0_T        = teta0_T_d;   
-
-bool use_coeffs_from_json;
-
-
-double attachment_probability = concentration * K_on * kinetic_step_attachment * dt / 13; //Probability per protofilament
-double hydrolysis_probability = K_hydrolysis * kinetic_step_hydrolysis * dt;
 
 
 
@@ -89,23 +43,9 @@ mt_coords_t mt_coords_c;
 
 vector<vector<int> > type_mol;   //types
 
-unsigned int seeds[NUM_SEEDS];
-
-//#define TEST_SEEDS 
-
-const unsigned int test_seeds[NUM_SEEDS] = { 0x10000000, 0x20000000, 0x30000000, 0x40000000, 0x50000000, 
-                           0x60000000, 0x70000000, 0x80000000, 0x90000000, 0xA0000000  };
 
 
-#define STEPS_TO_WRITE     500000         // steps in fpga. was 1000 ; 5000000*100 to almost destroy  //500000
-
-#define N   80          // steps to write   number of time steps was 100?
-
-#define TOTAL_STEPS        (STEPS_TO_WRITE*N)      
-
-
-
-/////////////////////////////////////////////////
+////////////////////////////////////////////////
 
 
 
@@ -113,13 +53,17 @@ const unsigned int test_seeds[NUM_SEEDS] = { 0x10000000, 0x20000000, 0x30000000,
 int fpga_board = -1;
 int fpga_chip = -1; 
 
-bool flag_compare = false;
+bool flag_cpu = false;
+bool flag_fpga = false; 
+
+
 bool flag_rand = false;
 bool flag_file = false; 
 char *out_file;
 
  
 unsigned int N_d;
+unsigned int k_steps = 100; 
 
 void print_usage(char *argv[])
 {
@@ -129,7 +73,8 @@ void print_usage(char *argv[])
   cerr << "-b fpga board: [0-1]\n";
   cerr << "-v cs: fpga chip_select [0-3]\n";
   cerr << "-N N_d: number of molecules in one filament\n";
-  cerr << "-c: if set compares fpga data with cpu\n";
+  cerr << "-c: set to use cpu \n";
+  cerr << "-f: set to use fpga (-c and -f could be both set) \n";  
   cerr << "-i number of kinetic steps\n" << endl; 
 }
 
@@ -152,10 +97,16 @@ int main(int argc, char *argv[])
       case 'b': fpga_board = stoi(optarg); break;
       case 'v': fpga_chip = stoi(optarg); break;
       case 'N': N_d = stoi(optarg); nd_set =  true; break;
-      case 'c': flag_compare = true; break;
+      case 'c': flag_cpu = true; break;
+      case 'f': flag_fpga = true; break;      
       case 'i': k_steps = stoi(optarg); break; 
       default: print_usage(argv); break;
     }
+  }
+
+  if ((!flag_fpga) && (!flag_cpu)) {
+    cerr << "No platform selected" << endl;
+    return -1;
   }
 
   if (!nd_set) {
@@ -169,158 +120,33 @@ int main(int argc, char *argv[])
     return -2; 
   }
 
-  FpgaDev Fpga;
-  mt      MtFpga(&Fpga, json_file, N_d);
+  if (flag_fpga) {
+    FpgaDev Fpga;
+    mt      MtFpga(&Fpga, fpga_board, fpga_chip, json_file, N_d);
+  }
   
-  if (flag_compare) {
+  if (flag_cpu) {
     mt MtCpu(json_file, N_d);
   }
-
-  if (Fpga.FindDevices() < 0) {
-    cerr << "Error in FindDevices\n";
-    return -1;
-  }
-
-
-  dev = Fpga.open(fpga_board, fpga_chip);
-
-  if (dev == -1) {
-    cerr << "Error in Fpga Open Device\n";
-    return -1;      
-  }
-
-
-
-
-
-
-
-  float coeff_buf[Nc];
-
-  if (MtFpga.UseJsonCoeefs(coeff_buf)) {
-
-    for (int i = 0; i < Nc; ++i) {
-      cout << coeff_buf[i] << endl;
-    }
-
-    Fpga.LoadCoeffs(dev, Nc, coeff_buf);       
-
-  }  
-  
-  if (Fpga.close(dev) < 0) {
-    cerr << "Error in Fpga Close Device\n";
-    return -1;         
-  }
-
-
-  return 0;
 
 
    double dt_c[N];
    double dt_f[N];
-   printf("N_d is %d\n",N_d);
+   cout << "N_d -> " << N_d << endl;
    
-   
-   printf("size is %d\n",(int)SIZE_DWORD);
-   
-   try{
-      
-      type_mol.resize(13);
-      mt_coords_f.x.resize(13);
-      mt_coords_f.y.resize(13);
-      mt_coords_f.t.resize(13);
-      mt_coords_c.x.resize(13);
-      mt_coords_c.y.resize(13);
-      mt_coords_c.t.resize(13);
-      for (int i = 0; i < 13; i++){
-         type_mol[i].resize(N_d);
-         mt_coords_f.x[i].resize(N_d);
-         mt_coords_f.y[i].resize(N_d);
-         mt_coords_f.t[i].resize(N_d);
-         mt_coords_c.x[i].resize(N_d);
-         mt_coords_c.y[i].resize(N_d);
-         mt_coords_c.t[i].resize(N_d);
-      }
-      
-   } catch (const  std::bad_alloc& ba){
-      std::cout << "bad_alloc caught: " << ba.what() << std::endl;
-   }  
-   FILE  *f_p, *f_p1, *f_length, *f_type;
+   cout << "STEPS_TO_WRITE -> " << STEPS_TO_WRITE << endl;
+   cout << "Kintetic steps -> " << k_steps << endl;
 
-   int error = 0;
-   if (flag_compare==1){
-      f_p = fopen ("MT_coords_CPU.txt","w");
-      if (f_p==NULL) {
-
-         printf("Error opening file!\n");
-         return -1;
-      }
-      
-   }
-   
-   if (flag_file)    f_p1 = fopen (out_file,"w");
-   else           f_p1 = fopen ("MT_coords_FPGA.txt","w");
-   
-   f_length = fopen ("len_MT_coords_FPGA.txt","w");
-   f_type = fopen ("type_MT_coords_FPGA.txt","w");
-   
-   if (f_p1==NULL) {
-
-      printf("Error opening file!\n");
-      return -1;
-   }
-   
-   
-
-
-   printf("TOTAL_STEPS = %d\nSTEPS_TO_WRITE = %d\n", TOTAL_STEPS, STEPS_TO_WRITE);
-
-   for(int i = 0; i < 13; i++) {
-      NStop[i] = N_d - nullHigh;
-   }
-   for(int i = 0; i < 13; i++) {
-      NStart[i] = 0;
-   }
-   n_layers = NStop[0] - NStart[0];
-
-   // get golden results
-   init_coords(mt_coords_f);
-   init_coords(mt_coords_c);
-   
 
 
    error = 0; 
 
    
-   printf("\nFlag rand is SET, %d\n\n",flag_rand);
-   
-   if (flag_rand==1)      {
-      
-      srand (time(NULL));
-      
-      // set seed vals
-      for (int i =0; i < NUM_SEEDS; ++i){
-#ifdef TEST_SEEDS
-            seeds[i] = test_seeds[i];
-#else
-            seeds[i]=(unsigned int)rand();
-#endif
-      }   
-
-      Fpga.StartRandomGenerator(dev,NUM_SEEDS, seeds); 
-      
-      printf("\nFlag rand is SET\n\n");
-      
-   }
-   
-   
-   printf("\n\nhereerereerere\n\n");
-
    for(int k=0; k<N; k++) {
 
       int err;
       struct timeval tt1, tt2;
-      if (flag_compare==1) {
+      if (flag_cpu==1) {
          get_time(&tt1);
          if (mt_cpu(STEPS_TO_WRITE, flag_rand, flag_seed, seeds,  mt_coords_c,  N_d)<0) { 
             printf("Nan Error in cpu. Step is %d. Exitting....\n",k); 
@@ -346,7 +172,7 @@ int main(int argc, char *argv[])
       
       printf("Step %d\n\t CPU Time = %f\n\t FPGA Time = %f\n",k,dt_c[k],dt_f[k] );
 
-      if (flag_compare==1){
+      if (flag_cpu==1){
          // uncomment u1
          // err = compare_results(x_1,y_1,t_1,x_2,y_2,t_2);
          if (err) {
@@ -357,37 +183,9 @@ int main(int argc, char *argv[])
 
 
 //-------------------------------------- add reattach, kinetics---------------------------------------------------------------------------------------------------
-      /*if (temp == 12) {
-         temp = 0;
-      }
-      */
-      
-      /*
-   for(i = 0; i < 13; i++) {
-      gen_rand = Rnd_pol.genrand_real2();
-      temp++;*/
-      //for (temp=0; temp<24; temp++)
-      //printf("y_2[0][] = %f\n", y_2[0][temp]);
-      //removeDimer(temp, x_2,y_2,t_2);
-      //printf("N[5] = %i, max = %i, min = %i, y = %fy = %fy = %fy = %fy = %f\n", NStop[5], max_N(NStop), min_N(NStop), y_2[1][0], y_2[1][1], y_2[1][2], y_2[1][3], y_2[1][4], y_2[1][5]);
       unsigned int i = 10, j = 34, j1;
       
       
-      /*
-      printf("y_2[11][11] = %f\n", y_2[11][11]);
-      printf("y_2[11][10] = %f\n", y_2[11][10]);
-      printf("y_2[11][9] = %f\n", y_2[11][9]);
-      printf("y_2[10][11] = %f\n", y_2[10][11]);
-      printf("y_2[12][11] = %f\n", y_2[12][11]);*/
-      /*for (i=0; i<13; i++) {
-         for (j=0; j<N_d; j++) {
-            if (y_2[i][j] == -100) printf("NONONONO");
-         }
-      }*/
-      //fixed -> check?, fix 250!
-      //printf("r = %f\n", getDistance(x_2[1][j+1], y_2[i][j+1], t_2[i][j+1], x_2[i][j], y_2[i][j], t_2[i][j]));
-      
-
       for (i=0; i<13; i++) {
          for (j=NStart[i]; j<NStop[i]-1; j++) {
             if (getDistance(mt_coords_f.x[i][j+1], mt_coords_f.y[i][j+1], mt_coords_f.t[i][j+1], 
@@ -412,7 +210,7 @@ int main(int argc, char *argv[])
 //-------------------------------------- add reattach, kinetics---------------------------------------------------------------------------------------------------
       
 
-      if (flag_compare==1) print_coords(f_p, mt_coords_c); 
+      if (flag_cpu==1) print_coords(f_p, mt_coords_c); 
       print_coords(f_p1, mt_coords_f); 
       print_coords_type(f_type, type_mol); 
       float y_avg = 0;;
@@ -425,14 +223,14 @@ int main(int argc, char *argv[])
 
 
    }
-   if (flag_compare==1){
+   if (flag_cpu==1){
       if (!error)
       printf("Test OK!\n");
    }
    
    
 
-  if (flag_compare==1) fclose(f_p);
+  if (flag_cpu==1) fclose(f_p);
   fclose(f_p1);
   fclose(f_length);
   fclose(f_type);
@@ -440,8 +238,11 @@ int main(int argc, char *argv[])
 
   Fpga.StopRandomGenerator(dev); 
 
+  if (Fpga.close(dev) < 0) {
+    cerr << "Error in Fpga Close Device\n";
+    return -1;         
+  }
 
-  Fpga.close(dev);
   return 0; 
 
 }

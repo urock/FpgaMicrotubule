@@ -8,6 +8,52 @@ namespace microtubule {
                            0x60000000, 0x70000000, 0x80000000, 0x90000000, 0xA0000000  };
 
 
+  bool mt::UseJsonCoeefs(float *cooefs_buf_out) {
+
+    if (use_coeffs_from_json) {
+
+      cooefs_buf_out[0]  = viscPF;         
+      cooefs_buf_out[1]  = viscPF_teta;    
+      cooefs_buf_out[2]  = B_Koeff;        
+      cooefs_buf_out[3]  = dt;
+      cooefs_buf_out[4]  = dt_viscPF_teta; 
+      cooefs_buf_out[5]  = dt_viscPF;      
+      cooefs_buf_out[6]  = sqrt_PF_xy;     
+      cooefs_buf_out[7]  = sqrt_PF_teta;   
+      cooefs_buf_out[8]  = R_MT;           
+      cooefs_buf_out[9]  = A_Koeff;        
+      cooefs_buf_out[10] = b_lat;          
+      cooefs_buf_out[11] = A_long_D;       
+      cooefs_buf_out[12] = b_long_D;       
+      cooefs_buf_out[13] = A_long_T;       
+      cooefs_buf_out[14] = b_long_T;       
+      cooefs_buf_out[15] = ro0;            
+      cooefs_buf_out[16] = ro0_long;       
+      cooefs_buf_out[17] = inv_ro0_long;   
+      cooefs_buf_out[18] = c_lat;          
+      cooefs_buf_out[19] = d_lat;          
+      cooefs_buf_out[20] = C_Koeff;        
+      cooefs_buf_out[21] = Rad;            
+      cooefs_buf_out[22] = inv_ro0;        
+      cooefs_buf_out[23] = clat_dlat_ro0;  
+      cooefs_buf_out[24] = clong_dlong_ro0;
+      cooefs_buf_out[25] = d_lat_ro0;      
+      cooefs_buf_out[26] = d_long_ro0;     
+      cooefs_buf_out[27] = fi_r;           
+      cooefs_buf_out[28] = psi_r;          
+      cooefs_buf_out[29] = fi_l;           
+      cooefs_buf_out[30] = psi_l;          
+      cooefs_buf_out[31] = rad_mon;        
+      cooefs_buf_out[32] = teta0_D;        
+      cooefs_buf_out[33] = teta0_T;     
+
+
+    }
+
+    return use_coeffs_from_json; 
+  }
+
+
   void mt::init(string json_name, unsigned int N_d_in) {
 
     N_d = N_d_in;
@@ -159,12 +205,25 @@ namespace microtubule {
     if ((ocf == NULL) || (olf == NULL) || (otf == NULL))
       throw; 
 
+    // TODO
     for(int i = 0; i < 13; ++i) {
       NStop[i] = N_d - 1;
       NStart[i] = NStop[i] - nullHigh;
     }
-    
     n_layers = NStop[0] - NStart[0];
+
+    // origin code
+
+    /*
+    for(int i = 0; i < 13; i++) {
+      NStop[i] = N_d - nullHigh;
+   }
+   for(int i = 0; i < 13; i++) {
+      NStart[i] = 0;
+   }
+   n_layers = NStop[0] - NStart[0];
+
+   */
 
     if (brownian_en) {
       // set seed vals
@@ -175,7 +234,10 @@ namespace microtubule {
           seeds[i]=(unsigned int)rand();
       }
 
-    }    
+    }
+
+
+    InitCoordsAndType();     
 
   }
 
@@ -189,72 +251,106 @@ namespace microtubule {
     
     init(json_name, N_d_in); 
 
+    use_fpga = false; 
+
   }
 
 
-  mt::mt(FpgaDev *Fpga_, string json_name, unsigned int N_d_in) : Fpga (Fpga_)
+
+  mt::mt(FpgaDev *Fpga_, int board, int chip, string json_name, unsigned int N_d_in) : 
+  Fpga (Fpga_)
 
   {
+    float coeff_buf[Nc];      
 
     std::cout << "MT constructor FPGA" << std::endl;
 
-    // if (Fpga->FindDevices() < 0) {
-    //   std::cerr << "Error in FindDevices\n";
-    // }
+    if (Fpga->FindDevices() < 0) {
+      std::cerr << "mt::mt(Fpga) Error in FindDevices\n";
+      throw; 
+    }
+
+    dev = Fpga->open(board, chip);
+
+    if (dev == -1) {
+      cerr << "mt::mt(Fpga) Error in Fpga Open Device\n";
+      throw;      
+    }
 
 
     init(json_name, N_d_in); 
+  
 
-  }
+    if (UseJsonCoeefs(coeff_buf)) {
 
+      for (int i = 0; i < Nc; ++i) {
+        cout << coeff_buf[i] << endl;
+      }
 
+      if (Fpga->LoadCoeffs(dev, Nc, coeff_buf) < 0) {
+        throw; 
+      }
 
-  bool mt::UseJsonCoeefs(float *cooefs_buf_out) {
-
-  if (use_coeffs_from_json) {
-
-      cooefs_buf_out[0]  = viscPF;         
-      cooefs_buf_out[1]  = viscPF_teta;    
-      cooefs_buf_out[2]  = B_Koeff;        
-      cooefs_buf_out[3]  = dt;
-      cooefs_buf_out[4]  = dt_viscPF_teta; 
-      cooefs_buf_out[5]  = dt_viscPF;      
-      cooefs_buf_out[6]  = sqrt_PF_xy;     
-      cooefs_buf_out[7]  = sqrt_PF_teta;   
-      cooefs_buf_out[8]  = R_MT;           
-      cooefs_buf_out[9]  = A_Koeff;        
-      cooefs_buf_out[10] = b_lat;          
-      cooefs_buf_out[11] = A_long_D;       
-      cooefs_buf_out[12] = b_long_D;       
-      cooefs_buf_out[13] = A_long_T;       
-      cooefs_buf_out[14] = b_long_T;       
-      cooefs_buf_out[15] = ro0;            
-      cooefs_buf_out[16] = ro0_long;       
-      cooefs_buf_out[17] = inv_ro0_long;   
-      cooefs_buf_out[18] = c_lat;          
-      cooefs_buf_out[19] = d_lat;          
-      cooefs_buf_out[20] = C_Koeff;        
-      cooefs_buf_out[21] = Rad;            
-      cooefs_buf_out[22] = inv_ro0;        
-      cooefs_buf_out[23] = clat_dlat_ro0;  
-      cooefs_buf_out[24] = clong_dlong_ro0;
-      cooefs_buf_out[25] = d_lat_ro0;      
-      cooefs_buf_out[26] = d_long_ro0;     
-      cooefs_buf_out[27] = fi_r;           
-      cooefs_buf_out[28] = psi_r;          
-      cooefs_buf_out[29] = fi_l;           
-      cooefs_buf_out[30] = psi_l;          
-      cooefs_buf_out[31] = rad_mon;        
-      cooefs_buf_out[32] = teta0_D;        
-      cooefs_buf_out[33] = teta0_T;     
+    } 
 
 
+    if (brownian_en) {
+      if (Fpga->StartRandomGenerator(dev,NUM_SEEDS, seeds) < 0) {
+        throw; 
+      }
     }
 
-    return use_coeffs_from_json; 
+    use_fpga = true; 
+
+
   }
 
 
+  void mt::InitCoordsAndType() {
+    unsigned int i,j;
+    for (i=0; i<13; i++) {
+      coords.y[i][0] = 2.0f*6/13*(i+1);
+    }
+    for (j=1; j<N_d; j++)   {//-4
+      for (i=0; i<13; i++) {
+        coords.y[i][j] = coords.y[i][j-1] + 2.0f*Rad;
+      }
+    }
+    for (j=0; j<N_d; j++)    { //-5 
+      for (i=0; i<13; i++)  {
+        coords.x[i][j] = 0.0;
+        coords.t[i][j] = 0.0;
+      }
+    }
+     /*
+        //
+        for (i=0; i<13; i++)  {
+           x[i][N_d-5] = 0.6;
+           t[i][N_d-5] = 0.2;
+        }
+        for (j=N_d-4; j<N_d; j++)
+        for (i=0; i<13; i++)  {
+           x[i][j] = x[i][j-1] + 2*Rad*sinf(t[i][j-1]);
+           y[i][j] = y[i][j-1] + 2*Rad*cosf(t[i][j-1]);
+           t[i][j] = t[i][j-1];
+        }
+     */
+    for (i=0; i<13; i++) {
+       for (j=NStart[i]; j<NStop[i]; j++) { 
+          type_mol[i][j] = 1;  // T
+       }
+       /*for(j = NStart[i]-1; j >= 0; j-- ){
+       type_mol[i][j] = 0;  *///  'D'   
+      for(j = NStop[i]; j < N_d; j++) {
+         coords.x[i][j] = 0;      
+         coords.y[i][j] = -100.0;
+         coords.t[i][j] = 0;
+         type_mol[i][j] = -1; // '-'   
+      }
+    }
+  }
+
+  int CalcDynamics(STEPS_TO_WRITE, )
 
 
 } // microtubule
