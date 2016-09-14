@@ -4,11 +4,51 @@ using namespace std;
 
 namespace microtubule {
 
+  // coefficients
+  float viscPF;   
+  float viscPF_teta;   
+  float B_Koeff; 
+  float dt; 
+  float dt_viscPF_teta; 
+  float dt_viscPF; 
+  float sqrt_PF_xy; 
+  float sqrt_PF_teta;   
+  float R_MT; 
+  float A_Koeff; 
+  float b_lat; 
+  float A_long_D; 
+  float b_long_D; 
+  float A_long_T; 
+  float b_long_T; 
+  float ro0; 
+  float ro0_long; 
+  float inv_ro0_long; 
+  float c_lat; 
+  float d_lat; 
+  float C_Koeff; 
+  float Rad; 
+  float inv_ro0; 
+  float clat_dlat_ro0;   
+  float clong_dlong_ro0; 
+  float d_lat_ro0; 
+  float d_long_ro0; 
+  float fi_r; 
+  float psi_r; 
+  float fi_l; 
+  float psi_l; 
+  float rad_mon; 
+  float teta0_D; 
+  float teta0_T; 
+
+
+  float attachment_probability;    //Probability per protofilament
+  float hydrolysis_probability;  
+
   const unsigned int test_seeds[NUM_SEEDS] = { 0x10000000, 0x20000000, 0x30000000, 0x40000000, 0x50000000, 
                            0x60000000, 0x70000000, 0x80000000, 0x90000000, 0xA0000000  };
 
 
-  bool mt::UseJsonCoeefs(float *cooefs_buf_out) {
+  bool mt::use_json_coeffs(float *cooefs_buf_out) {
 
     if (use_coeffs_from_json) {
 
@@ -55,6 +95,17 @@ namespace microtubule {
 
 
   void mt::init(string json_name, unsigned int N_d_in) {
+
+    struct timeval tt1;  
+
+    gettimeofday(&tt1, 0);
+    srand((unsigned) time(NULL));
+
+    float t1 = (float) tt1.tv_usec
+
+    unsigned long InitRnd = (t1-(int)t1)*1e+10 + rand(); 
+
+    KineticRand = new UniRandom(InitRnd*1.7 + 0.35*rand());
 
     N_d = N_d_in;
 
@@ -237,7 +288,7 @@ namespace microtubule {
     }
 
 
-    InitCoordsAndType();     
+    init_coords_and_type();     
 
   }
 
@@ -281,7 +332,7 @@ namespace microtubule {
     init(json_name, N_d_in); 
   
 
-    if (UseJsonCoeefs(coeff_buf)) {
+    if (use_json_coeffs(coeff_buf)) {
 
       for (int i = 0; i < Nc; ++i) {
         cout << coeff_buf[i] << endl;
@@ -306,7 +357,7 @@ namespace microtubule {
   }
 
 
-  void mt::InitCoordsAndType() {
+  void mt::init_coords_and_type() {
     unsigned int i,j;
     for (i=0; i<13; i++) {
       coords.y[i][0] = 2.0f*6/13*(i+1);
@@ -350,7 +401,76 @@ namespace microtubule {
     }
   }
 
-  int CalcDynamics(STEPS_TO_WRITE, )
 
+  int mt::calc_dynamics() {
+
+    if (use_fpga) {
+      // TODO: work on n_layers var
+      return Fpga->CalcDynamics(dev,STEPS_TO_WRITE, n_layers, mt_coords, type_mol);
+    } else {
+      return calc_dynamics_cpu(unsigned int n_layers); 
+    }
+
+  }
+
+
+  void mt::print_length()
+  {
+    float y_avg = 0;;
+    for (int i = 0; i < 13; i++) {
+       y_avg += coords.y[i][NStop[i]-1];
+    }
+    // printf("avg_y %f \n", y_avg);
+    
+    fprintf(olf,"%.3f \n", y_avg/13);
+  }
+
+
+
+
+  void mt::print_coords()
+  {
+    int j;
+
+    for (int i=0; i<13; i++) {
+      for (j=0; j<N_d; j++)
+        fprintf(ocf,"%.3f\t  ", coords.x[i][j]);
+
+      for (j=0; j<N_d; j++)
+        fprintf(ocf,"%.3f\t  ", coords.y[i][j]);
+
+      for (j=0; j<N_d; j++)
+        fprintf(ocf,"%.3f\t  ", coords.t[i][j]);
+     }
+
+     fprintf(ocf,"\n");
+  }
+
+  void mt::print_coords_type()
+  {
+     unsigned int i,j;
+
+    for (int i=0; i<13; ++i) {
+      for (int j=0; j<N_d; ++j)
+        fprintf(otf,"%i\t  ", type_mol[i][j]);
+    }
+     fprintf(otf,"\n");
+  }
+
+
+  mt::~mt() {
+    fclose(ocf);
+    fclose(olf);
+    fclose(otf);
+
+    if (use_fpga) {
+      Fpga->StopRandomGenerator(dev); 
+
+      if (Fpga->close(dev) < 0) {
+        cerr << "Error in Fpga Close Device\n";
+        return -1;         
+      }      
+    }
+  }  
 
 } // microtubule

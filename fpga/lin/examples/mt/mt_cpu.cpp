@@ -1,6 +1,43 @@
 #include "mt_cpu.h"
 
-extern  unsigned int N_d;
+
+namespace microtubule {
+
+  // coefficients
+extern float viscPF;   
+extern float viscPF_teta;   
+extern float B_Koeff; 
+extern float dt; 
+extern float dt_viscPF_teta; 
+extern float dt_viscPF; 
+extern float sqrt_PF_xy; 
+extern float sqrt_PF_teta;   
+extern float R_MT; 
+extern float A_Koeff; 
+extern float b_lat; 
+extern float A_long_D; 
+extern float b_long_D; 
+extern float A_long_T; 
+extern float b_long_T; 
+extern float ro0; 
+extern float ro0_long; 
+extern float inv_ro0_long; 
+extern float c_lat; 
+extern float d_lat; 
+extern float C_Koeff; 
+extern float Rad; 
+extern float inv_ro0; 
+extern float clat_dlat_ro0;   
+extern float clong_dlong_ro0; 
+extern float d_lat_ro0; 
+extern float d_long_ro0; 
+extern float fi_r; 
+extern float psi_r; 
+extern float fi_l; 
+extern float psi_l; 
+extern float rad_mon; 
+extern float teta0_D; 
+extern float teta0_T; 	
 
 
 vector<vector<int> > type;//[13][N_d];		
@@ -23,61 +60,14 @@ vector<vector<float> > long_d_y;//[13][N_d+1];
 vector<vector<float> > long_d_t;//[13][N_d+1];
 
 
-// coefficients
-extern float viscPF;       		
-extern float viscPF_teta;  		
-extern float B_Koeff;			
-extern float dt;		
-extern float dt_viscPF_teta;
-extern float dt_viscPF;			
-extern float sqrt_PF_xy; 		
-extern float sqrt_PF_teta; 		
-extern float R_MT; 				
-extern float A_Koeff;			
-extern float b_lat;   			
-extern float A_long_D; 			
-extern float b_long_D; 			
-extern float A_long_T; 			
-extern float b_long_T; 			
-extern float ro0;       	
-extern float ro0_long; 	
-extern float inv_ro0_long; 
-extern float c_lat;  			
-extern float d_lat;  			
-extern float C_Koeff; 			
-extern float Rad;       	
-extern float inv_ro0; 			
-extern float clat_dlat_ro0;	
-extern float clong_dlong_ro0;	
-extern float d_lat_ro0;			
-extern float d_long_ro0;	
-extern float fi_r; 				
-extern float psi_r; 		
-extern float fi_l;  		
-extern float psi_l;  			
-extern float rad_mon; 	 		
-extern float teta0_D; 			
-extern float teta0_T;		
-
-
-int run_step_c(mt_coords_t  &mt_coords, int flag_rand_c);
-
-unsigned int N_d_choose = 0;
-
-
-
-
-
-
-
-
-
 UniRandom ar_uni[10];
 
+unsigned int N_d_choose = 0;
 
 int is_nan(float val){
  return (val!=val);
 }
+
 
 int get_norm_vals(int index, float *n0, float *n1) {
 
@@ -113,293 +103,6 @@ int get_norm_vals(int index, float *n0, float *n1) {
 
  return (is_nan(d0) || is_nan (d1));
 
-}
-
-
-
-
-void calc_grad_c(		unsigned int i1, 		// i index i?aaie iieaeoeu
-						unsigned int j1,			// j index i?aaie iieaeoeu
-
-						unsigned int i2,			// i index eaaie iieaeoeu
-
-						int type, 		// dimer type: 0 - 'D', 1 - 'T'
-						unsigned int pos,		// monomer position in dimer: 0 - bottom, 1 - top
-
-						float x_1,		// i?aaay iieaeoea		mol1
-						float y_1,
-						float teta_1,
-
-						float x_2,		// eaaay iieaeoea		mol2
-						float y_2,
-						float teta_2,
-
-						float x_3,		// aa?oiyy iieaeoea 	mol3
-						float y_3,
-						float teta_3,
-
-						float *grad_lat_x_1,			// left component of mol1
-						float *grad_lat_y_1,
-						float *grad_lat_teta_1,
-
-						float *grad_lat_x_2,			// right component of mol2
-						float *grad_lat_y_2,
-						float *grad_lat_teta_2,
-
-						float *grad_long_x_1,			// up component of mol1
-						float *grad_long_y_1,
-						float *grad_long_teta_1,
-
-						float *grad_long_x_3,			// down component of mol3
-						float *grad_long_y_3,
-						float *grad_long_teta_3
-
-);
-
-
-
-
-
-int mt_cpu(	int		n_step,				
-			int		flag_rand_c,
-			int		flag_seed_c,
-
-			unsigned int seeds[],
-
-			mt_coords_t  &mt_coords,
-
-
-			unsigned int N_d_chooseInput
-)
-
-{
-N_d_choose = N_d_chooseInput;
-	
-printf("flag_rand %d flag_seed %d\n",  flag_rand_c, flag_seed_c);
-
-	
-
-	static int allocate = 0;
-
-	if (allocate==0){
-		allocate=1;
-
-		
-		lat_l_x.resize(13);
-		lat_l_y.resize(13);
-		lat_l_t.resize(13);
-		lat_r_x.resize(13);
-		lat_r_y.resize(13);
-		lat_r_t.resize(13);
-		long_u_x.resize(13);
-		long_u_y.resize(13);
-		long_u_t.resize(13);
-		long_d_x.resize(13);
-		long_d_y.resize(13);
-		long_d_t.resize(13);
-		type.resize(13);
-		for (int p = 0; p < 13; p++){
-
-			lat_l_x[p].resize(N_d_choose+1);
-			lat_l_y[p].resize(N_d_choose+1);
-			lat_l_t[p].resize(N_d_choose+1);
-			lat_r_x[p].resize(N_d_choose+3);
-			lat_r_y[p].resize(N_d_choose+3);
-			lat_r_t[p].resize(N_d_choose+3);
-			long_u_x[p].resize(N_d_choose+1);
-			long_u_y[p].resize(N_d_choose+1);
-			long_u_t[p].resize(N_d_choose+1);
-			long_d_x[p].resize(N_d_choose+1);
-			long_d_y[p].resize(N_d_choose+1);
-			long_d_t[p].resize(N_d_choose+1);
-			type[p].resize(N_d_choose);
-			
-			
-		}
-
-	} 
-	
-	if ((flag_seed_c == 1) && (flag_rand_c==1)) {
-
-		for (int jj=0; jj<10; jj++)
-			ar_uni[jj].init_genrand(seeds[jj]);
-	}	
-	// for (int p=0; p<10;p++)
-	// printf("start gen %d %d\n",p,ar_uni[p].mti);
-	
-	// for (int p =0; p<10; p++)
-		// printf("seed is %d\n", seeds[p]);	
-
-
-	
-
-	unsigned int i,j;
-
-
-
-		for (j=0; j<N_d_choose; j++)
-			for (i=0; i<13; i++) 
-				type[i][j] = 0;		
-
-
-
-
-	for (int step=1; step <= n_step; step++){
-		if (run_step_c(mt_coords, flag_rand_c)<0) 
-			return -1;	
-	}
-
-
-
-	return 0;	
-}
-
-
-
-
-
-int run_step_c(mt_coords_t  &mt_coords, int flag_rand_c)
-{
-	unsigned int i, j;
-
-	float f_x, f_y, f_t;
-
-	// ia?aiao?, ii?aaaey?uee n?eoaai ee eiiaeooaaeuiia (ii aa?oeeaee) acaeiiaaenoaea ia?ao iieaeoeaie (iiiiia?aie) 
-	// aioo?e iaiie aaioaee (aeia?a) (pos = 0), eee ia?ao iiiiia?aie ec ?aciuo aeia?ia (pos = 1)
-	unsigned int pos = 0; 
-
-	// calculate gradients
-	for (i=0; i<13; i++){
-
-		pos = 0;
-
-		for (j=0; j<N_d_choose; j++) {
-
-
-			// auai? ninaaa neaaa aey eaoa?aeuiiai acaeiiaaenoaey 
-			// anaai i?ioeeaiaioia (IO) 13 oooe: io 0 ai 12
-			// ie?iee ?ya iieaeoe ec i?ioioeeaiaioia ia?acoao ia eieuoi, a nie?aeu. y eii?aeiaoa 12 IO aey iaiiai ?yaa anaaaa aieuoa y eii?aeiaou 0 IO
-			// nie?aeu cae?o?eaaaony iaeaai aaa?o
-			// iiyoiio iiiiia? 12 IO neaaa acaeiiaaenoaoao n iiiiia?ii ia ec naiaai ?yaa, a ec a?oaiai - ni naaeaii ia 3 ?yaa.
-			// o.a. iieaeoea (0,12) neaaa acaeiiaaenoaoao n (3,0); (1,12) - (4,0) e oa
-			unsigned int i2 = (i==12)? 0 : (i+1);
-			unsigned int j2 = (i==12)? (j+3) : j;
-
-			calc_grad_c(i, j, i2, type[i][j],  pos,
-
-			mt_coords.x[i ][j],  mt_coords.y[i][j], mt_coords.t[i][j],											// mol1 (right) - i?aaay iieaeoea, aey iaa iaiiaeyai neeu aey acaeiiaaenoaey neaaa e aaa?oo
-
-			mt_coords.x[i2][j2], mt_coords.y[i2][j2], mt_coords.t[i2][j2],										// mol2 (left) - iieaeoey neaaa ii ai?eciioaee, aey iaa iaiiaeyai neeo acaeiiaaeonoaey ni?aaa
-
-			mt_coords.x[i][j+1],  mt_coords.y[i][j+1], mt_coords.t[i][j+1],										// mol3 (up)  - iieaeoea naa?oo ii aa?oeeaee, aey iaa iaiiaeyai neeo acaeiiaaenoaey nieco
-
-			&lat_l_x[i ][j], &lat_l_y[i ][j], &lat_l_t[i ][j],
-			&lat_r_x[i2][j2], &lat_r_y[i2][j2], &lat_r_t[i2][j2],
-
-			&long_u_x[i][j  ], &long_u_y[i][j  ], &long_u_t[i][j  ],
-			&long_d_x[i][j+1], &long_d_y[i][j+1], &long_d_t[i][j+1]    );
-
-			if (pos==1)
-			pos = 0;
-			else
-			pos = 1;
-
-		}
-
-
-	}
-
-
-
-	// update coordinates
-	// float norm_val1[3], norm_val2[3], norm_val3[3];
-	float temp_val1, temp_val2, temp_val3;
-	
-	float rand_buf[10];
-
-
-
-	for (j=0; j<N_d_choose; j+=3)	{	// coordinates are fixed at j=0
-		for (i=0; i<13; i++) {
-			if (flag_rand_c==1){
-				for (int ii=0; ii<5; ii++) {		
-					if (get_norm_vals(ii, &rand_buf[2*ii], &rand_buf[2*ii+1])!=0) {
-					 	printf("NaN error!!!!\n"); 
-					 	return -1;
-					}
-				}
-			}
-		
-
-
-			temp_val1=rand_buf[0];
-			temp_val2=rand_buf[1];
-			temp_val3=rand_buf[2];
-
-
-			f_x = lat_l_x[i][j] + lat_r_x[i][j] + long_u_x[i][j] + long_d_x[i][j];
-			f_y = lat_l_y[i][j] + lat_r_y[i][j] + long_u_y[i][j] + long_d_y[i][j];
-			f_t = lat_l_t[i][j] + lat_r_t[i][j] + long_u_t[i][j] + long_d_t[i][j];
-
-		
-			if (j > 0) {
-				if (flag_rand_c==1){
-					mt_coords.x[i][j] -= dt_viscPF * f_x + sqrt_PF_xy*temp_val1;
-					mt_coords.y[i][j] -= dt_viscPF * f_y + sqrt_PF_xy*temp_val2;
-					mt_coords.t[i][j] -= dt_viscPF_teta* f_t + sqrt_PF_teta*temp_val3;
-				} else{
-					mt_coords.x[i][j] -= dt_viscPF * f_x ;
-					mt_coords.y[i][j] -= dt_viscPF * f_y;
-					mt_coords.t[i][j] -= dt_viscPF_teta* f_t;
-					
-				}
-			}
-
-			temp_val1=rand_buf[3];
-			temp_val2=rand_buf[4];
-			temp_val3=rand_buf[5];
-
-			f_x = lat_l_x[i][j+1] + lat_r_x[i][j+1] + long_u_x[i][j+1] + long_d_x[i][j+1];
-			f_y = lat_l_y[i][j+1] + lat_r_y[i][j+1] + long_u_y[i][j+1] + long_d_y[i][j+1];
-			f_t = lat_l_t[i][j+1] + lat_r_t[i][j+1] + long_u_t[i][j+1] + long_d_t[i][j+1];
-
-		 	if (flag_rand_c==1){
-				mt_coords.x[i][j+1] -= dt_viscPF * f_x + sqrt_PF_xy*temp_val1;
-				mt_coords.y[i][j+1] -= dt_viscPF * f_y + sqrt_PF_xy*temp_val2;
-				mt_coords.t[i][j+1] -= dt_viscPF_teta* f_t + sqrt_PF_teta*temp_val3;
-		 	} else {
-				mt_coords.x[i][j+1] -= dt_viscPF * f_x ;
-				mt_coords.y[i][j+1] -= dt_viscPF * f_y;
-				mt_coords.t[i][j+1] -= dt_viscPF_teta* f_t;
-		 	}
-
-
-
-			temp_val1=rand_buf[6];
-			temp_val2=rand_buf[7];
-			temp_val3=rand_buf[8];
-	
-			f_x = lat_l_x[i][j+2] + lat_r_x[i][j+2] + long_u_x[i][j+2] + long_d_x[i][j+2];
-			f_y = lat_l_y[i][j+2] + lat_r_y[i][j+2] + long_u_y[i][j+2] + long_d_y[i][j+2];
-			f_t = lat_l_t[i][j+2] + lat_r_t[i][j+2] + long_u_t[i][j+2] + long_d_t[i][j+2];
-
-			if (flag_rand_c==1){
-				mt_coords.x[i][j+2] -= dt_viscPF * f_x + sqrt_PF_xy*temp_val1;
-				mt_coords.y[i][j+2] -= dt_viscPF * f_y + sqrt_PF_xy*temp_val2;
-				mt_coords.t[i][j+2] -= dt_viscPF_teta* f_t + sqrt_PF_teta*temp_val3;
-			} else {
-				mt_coords.x[i][j+2] -= dt_viscPF * f_x;
-				mt_coords.y[i][j+2] -= dt_viscPF * f_y;
-				mt_coords.t[i][j+2] -= dt_viscPF_teta* f_t;
-			
-		  }
-
-		} // i
-
- 	} // j
-
-
-return 0;
 }
 
 
@@ -575,9 +278,9 @@ void calc_grad_c(		unsigned int i1, 		// i index i?aaie iieaeoeu
 		float tmp2	= r_long * clong_dlong_ro0 * expf(-(r_long*r_long) * d_long_ro0 );
 
 		if (type==0)	// dimer type 'D'
-		dUdr_C = (tmp1*b_long_D + tmp2) * A_long_D;
+			dUdr_C = (tmp1*b_long_D + tmp2) * A_long_D;
 		else 			// dimer type 'T'
-		dUdr_C = (tmp1*b_long_T + tmp2) * A_long_T;
+			dUdr_C = (tmp1*b_long_T + tmp2) * A_long_T;
 	}
 
 
@@ -590,9 +293,9 @@ void calc_grad_c(		unsigned int i1, 		// i index i?aaie iieaeoeu
 
 	float Grad_tmp;
 	if (type==0)		// dimer type 'D'
-	Grad_tmp = B_Koeff*(teta_3 - teta_1 - teta0_D);
+		Grad_tmp = B_Koeff*(teta_3 - teta_1 - teta0_D);
 	else				// dimer type 'T'
-	Grad_tmp = B_Koeff*(teta_3 - teta_1 - teta0_T);
+		Grad_tmp = B_Koeff*(teta_3 - teta_1 - teta0_T);
 
 	// iiiaiye ooo ciae - ana ca?aaioaei!
 	float GradU_B_teta_1 = - Grad_tmp;
@@ -629,5 +332,210 @@ void calc_grad_c(		unsigned int i1, 		// i index i?aaie iieaeoeu
 
 
 
+
+int run_step_c(mt_coords_t  &mt_coords, vector<vector<int> > type_mol, bool flag_rand_c)
+{
+	unsigned int i, j;
+
+	float f_x, f_y, f_t;
+
+	unsigned int pos = 0; 
+
+	// calculate gradients
+	for (i=0; i<13; i++){
+
+		pos = 0;
+
+		for (j=0; j<N_d_choose; j++) {
+
+
+			unsigned int i2 = (i==12)? 0 : (i+1);
+			unsigned int j2 = (i==12)? (j+3) : j;
+
+			calc_grad_c(i, j, i2, type_mol[i][j],  pos,
+
+			mt_coords.x[i ][j],  mt_coords.y[i][j], mt_coords.t[i][j],											// mol1 (right) - i?aaay iieaeoea, aey iaa iaiiaeyai neeu aey acaeiiaaenoaey neaaa e aaa?oo
+
+			mt_coords.x[i2][j2], mt_coords.y[i2][j2], mt_coords.t[i2][j2],										// mol2 (left) - iieaeoey neaaa ii ai?eciioaee, aey iaa iaiiaeyai neeo acaeiiaaeonoaey ni?aaa
+
+			mt_coords.x[i][j+1],  mt_coords.y[i][j+1], mt_coords.t[i][j+1],										// mol3 (up)  - iieaeoea naa?oo ii aa?oeeaee, aey iaa iaiiaeyai neeo acaeiiaaenoaey nieco
+
+			&lat_l_x[i ][j], &lat_l_y[i ][j], &lat_l_t[i ][j],
+			&lat_r_x[i2][j2], &lat_r_y[i2][j2], &lat_r_t[i2][j2],
+
+			&long_u_x[i][j  ], &long_u_y[i][j  ], &long_u_t[i][j  ],
+			&long_d_x[i][j+1], &long_d_y[i][j+1], &long_d_t[i][j+1]    );
+
+			if (pos==1)
+			pos = 0;
+			else
+			pos = 1;
+
+		}
+
+
+	}
+
+
+
+	// update coordinates
+	// float norm_val1[3], norm_val2[3], norm_val3[3];
+	float temp_val1, temp_val2, temp_val3;
+	
+	float rand_buf[10];
+
+
+
+	for (j=0; j<N_d_choose; j+=3)	{	// coordinates are fixed at j=0
+		for (i=0; i<13; i++) {
+			if (flag_rand_c){
+				for (int ii=0; ii<5; ii++) {		
+					if (get_norm_vals(ii, &rand_buf[2*ii], &rand_buf[2*ii+1])!=0) {
+					 	printf("NaN error!!!!\n"); 
+					 	return -1;
+					}
+				}
+			}
+		
+
+
+			temp_val1=rand_buf[0];
+			temp_val2=rand_buf[1];
+			temp_val3=rand_buf[2];
+
+
+			f_x = lat_l_x[i][j] + lat_r_x[i][j] + long_u_x[i][j] + long_d_x[i][j];
+			f_y = lat_l_y[i][j] + lat_r_y[i][j] + long_u_y[i][j] + long_d_y[i][j];
+			f_t = lat_l_t[i][j] + lat_r_t[i][j] + long_u_t[i][j] + long_d_t[i][j];
+
+		
+			if (j > 0) {
+				if (flag_rand_c){
+					mt_coords.x[i][j] -= dt_viscPF * f_x + sqrt_PF_xy*temp_val1;
+					mt_coords.y[i][j] -= dt_viscPF * f_y + sqrt_PF_xy*temp_val2;
+					mt_coords.t[i][j] -= dt_viscPF_teta* f_t + sqrt_PF_teta*temp_val3;
+				} else{
+					mt_coords.x[i][j] -= dt_viscPF * f_x ;
+					mt_coords.y[i][j] -= dt_viscPF * f_y;
+					mt_coords.t[i][j] -= dt_viscPF_teta* f_t;
+					
+				}
+			}
+
+			temp_val1=rand_buf[3];
+			temp_val2=rand_buf[4];
+			temp_val3=rand_buf[5];
+
+			f_x = lat_l_x[i][j+1] + lat_r_x[i][j+1] + long_u_x[i][j+1] + long_d_x[i][j+1];
+			f_y = lat_l_y[i][j+1] + lat_r_y[i][j+1] + long_u_y[i][j+1] + long_d_y[i][j+1];
+			f_t = lat_l_t[i][j+1] + lat_r_t[i][j+1] + long_u_t[i][j+1] + long_d_t[i][j+1];
+
+		 	if (flag_rand_c){
+				mt_coords.x[i][j+1] -= dt_viscPF * f_x + sqrt_PF_xy*temp_val1;
+				mt_coords.y[i][j+1] -= dt_viscPF * f_y + sqrt_PF_xy*temp_val2;
+				mt_coords.t[i][j+1] -= dt_viscPF_teta* f_t + sqrt_PF_teta*temp_val3;
+		 	} else {
+				mt_coords.x[i][j+1] -= dt_viscPF * f_x ;
+				mt_coords.y[i][j+1] -= dt_viscPF * f_y;
+				mt_coords.t[i][j+1] -= dt_viscPF_teta* f_t;
+		 	}
+
+
+
+			temp_val1=rand_buf[6];
+			temp_val2=rand_buf[7];
+			temp_val3=rand_buf[8];
+	
+			f_x = lat_l_x[i][j+2] + lat_r_x[i][j+2] + long_u_x[i][j+2] + long_d_x[i][j+2];
+			f_y = lat_l_y[i][j+2] + lat_r_y[i][j+2] + long_u_y[i][j+2] + long_d_y[i][j+2];
+			f_t = lat_l_t[i][j+2] + lat_r_t[i][j+2] + long_u_t[i][j+2] + long_d_t[i][j+2];
+
+			if (flag_rand_c){
+				mt_coords.x[i][j+2] -= dt_viscPF * f_x + sqrt_PF_xy*temp_val1;
+				mt_coords.y[i][j+2] -= dt_viscPF * f_y + sqrt_PF_xy*temp_val2;
+				mt_coords.t[i][j+2] -= dt_viscPF_teta* f_t + sqrt_PF_teta*temp_val3;
+			} else {
+				mt_coords.x[i][j+2] -= dt_viscPF * f_x;
+				mt_coords.y[i][j+2] -= dt_viscPF * f_y;
+				mt_coords.t[i][j+2] -= dt_viscPF_teta* f_t;
+			
+		  }
+
+		} // i
+
+ 	} // j
+
+
+return 0;
+}
+
+
+
+
+int mt::calc_dynamics_cpu(unsigned int n_layers) {
+
+	static bool first_run = true;
+
+	if (first_run) {
+
+		first_run = false; 
+
+		lat_l_x.resize(13);
+		lat_l_y.resize(13);
+		lat_l_t.resize(13);
+		lat_r_x.resize(13);
+		lat_r_y.resize(13);
+		lat_r_t.resize(13);
+		long_u_x.resize(13);
+		long_u_y.resize(13);
+		long_u_t.resize(13);
+		long_d_x.resize(13);
+		long_d_y.resize(13);
+		long_d_t.resize(13);
+		type.resize(13);
+
+		if (brownian_en) {
+			for (int jj=0; jj<10; jj++)
+				ar_uni[jj].init_genrand(seeds[jj]);			
+		}
+	}
+
+	if (N_d_choose != n_layers) {
+
+		N_d_choose = n_layers;
+
+		for (int p = 0; p < 13; p++) {
+
+			lat_l_x[p].resize(N_d_choose+1);
+			lat_l_y[p].resize(N_d_choose+1);
+			lat_l_t[p].resize(N_d_choose+1);
+			lat_r_x[p].resize(N_d_choose+3);
+			lat_r_y[p].resize(N_d_choose+3);
+			lat_r_t[p].resize(N_d_choose+3);
+			long_u_x[p].resize(N_d_choose+1);
+			long_u_y[p].resize(N_d_choose+1);
+			long_u_t[p].resize(N_d_choose+1);
+			long_d_x[p].resize(N_d_choose+1);
+			long_d_y[p].resize(N_d_choose+1);
+			long_d_t[p].resize(N_d_choose+1);
+			type[p].resize(N_d_choose);
+			
+		}
+
+	}
+
+	for (int step=1; step <= STEPS_TO_WRITE; step++) {
+		if (run_step_c(coords, type_mol, brownian_en)<0) 
+			return -1;	
+	}
+
+	return 0;	
+}
+
+
+
+
+
+} // microtubule
 
 
