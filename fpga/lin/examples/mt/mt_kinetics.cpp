@@ -51,7 +51,7 @@ namespace microtubule {
      type_mol[i][NStop[i]] = 1; //T
      NStop[i]++;
      //type_mol[i][NStop[i]] = 0;  //todo  was 'D'      ??1045
-  }a
+  }
 
 
 
@@ -153,13 +153,13 @@ namespace microtubule {
         printf("NStopMax >= N_d - 8 && NStopMin <= 3N_d = %i \n", N_d);
      }
      if (NStopMax >= N_d - 5)
-        shift_coords(coords, false, 4);
+        shift_coords(false, 4);
 
      if (NStopMin <= 4) {
         //printf("%iUOP:  \n",NStop[1]);
         //for (int i = 0; i < 10; i++)
         // printf("%iUOP: %f \n",i, y_2[1][i]);
-        shift_coords(coords, true, 4);
+        shift_coords(true, 4);
         //for (int i = 0; i < 10; i++)
         // printf("%iUOP: %f \n",i, y_2[1][i]);
         //printf("%iUOP:  \n",NStop[1]);
@@ -180,7 +180,7 @@ namespace microtubule {
         gen_rand = KineticRand->get_uni_num();
      
         if(gen_rand <= attachment_probability){      
-              addDimer(i, coords);
+            addDimer(i);
         }
         
         int dim_calc = 1;
@@ -204,28 +204,27 @@ namespace microtubule {
 
   void mt::calc_kinetics() {
   
+    unsigned int i,j,j1; 
       
-      for (int i=0; i<13; i++) {
-         for (int j=NStart[i]; j<NStop[i]-1; j++) {
-            if (getDistance(coords.x[i][j+1], coords.y[i][j+1], coords.t[i][j+1], 
-                            coords.x[i][j],   coords.y[i][j],   coords.t[i][j] ) >= cut_off) { //molecule deattached
-               //printf("deattached :%i %i r = %f\n", i, j,getDistance(x_2[i][j+1], y_2[i][j+1], t_2[i][j+1], x_2[i][j], y_2[i][j], t_2[i][j]));
-               for (int j1=j; j1<NStop[i]; j1++) {
-                  coords.y[i][j1] = -100;
-                  type_mol[i][j1] = -1;   //'-'
-                  printf("deattached :%i %i\n", i, j1);
-                  //todo type change
-               } 
-               NStop[i] = j;
-            }
-         }
+    for (i=0; i<13; i++) {
+      for (j=NStart[i]; j<NStop[i]-1; j++) {
+          if (getDistance(coords.x[i][j+1], coords.y[i][j+1], coords.t[i][j+1], 
+                          coords.x[i][j],   coords.y[i][j],   coords.t[i][j] ) >= cut_off) { //molecule deattached
+             //printf("deattached :%i %i r = %f\n", i, j,getDistance(x_2[i][j+1], y_2[i][j+1], t_2[i][j+1], x_2[i][j], y_2[i][j], t_2[i][j]));
+             for (j1=j; j1<NStop[i]; j1++) {
+                coords.y[i][j1] = -100;
+                type_mol[i][j1] = -1;   //'-'
+                printf("deattached :%i %i\n", i, j1);
+                //todo type change
+             } 
+             NStop[i] = j;
+          }
       }
-      
-      polimerization_algorithm();
-      
-      choose_to_shift_coords();    
-
-
+    }
+    
+    polimerization_algorithm();
+    
+    choose_to_shift_coords();    
   }
 
 

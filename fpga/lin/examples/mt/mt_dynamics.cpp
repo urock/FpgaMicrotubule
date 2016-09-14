@@ -1,5 +1,7 @@
-#include "mt_cpu.h"
+#include "mt.h"
 
+using namespace std;
+using namespace microtubule;
 
 namespace microtubule {
 
@@ -60,7 +62,7 @@ vector<vector<float> > long_d_y;//[13][N_d+1];
 vector<vector<float> > long_d_t;//[13][N_d+1];
 
 
-UniRandom ar_uni[10];
+UniRandom *ar_uni[10];
 
 unsigned int N_d_choose = 0;
 
@@ -79,8 +81,8 @@ int get_norm_vals(int index, float *n0, float *n1) {
 	float sinfs, cosfs;
 
 
-	r1 = ar_uni[2*index].get_uni_num();
-	r2 = ar_uni[2*index + 1].get_uni_num();
+	r1 = ar_uni[2*index]->get_uni_num();
+	r2 = ar_uni[2*index + 1]->get_uni_num();
 
 
 
@@ -88,7 +90,7 @@ int get_norm_vals(int index, float *n0, float *n1) {
 	mults = -2.0f * logfs;
 	rho = sqrtf(mults);
 
-	mults1=2*pii*r2;
+	mults1=2*pi*r2;
 
 	sinfs=sinf(mults1);
 	cosfs=cosf(mults1);
@@ -495,8 +497,8 @@ int mt::calc_dynamics_cpu(unsigned int n_layers) {
 		type.resize(13);
 
 		if (brownian_en) {
-			for (int jj=0; jj<10; jj++)
-				ar_uni[jj].init_genrand(seeds[jj]);			
+			for (int jj=0; jj<10; jj++) 
+				ar_uni[jj] = new UniRandom(seeds[jj]);
 		}
 	}
 

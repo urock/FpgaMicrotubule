@@ -101,7 +101,7 @@ namespace microtubule {
     gettimeofday(&tt1, 0);
     srand((unsigned) time(NULL));
 
-    float t1 = (float) tt1.tv_usec
+    float t1 = (float) tt1.tv_usec;
 
     unsigned long InitRnd = (t1-(int)t1)*1e+10 + rand(); 
 
@@ -249,11 +249,11 @@ namespace microtubule {
     }
 
     //icf = fopen(icf_name, "r");
-    ocf = fopen(ocf_name, "w");
-    olf = fopen(olf_name, "w");
-    otf = fopen(otf_name, "w");
+    ocf.open(ocf_name);
+    olf.open(olf_name);
+    otf.open(otf_name);
 
-    if ((ocf == NULL) || (olf == NULL) || (otf == NULL))
+    if ((!ocf.is_open()) || (!olf.is_open()) || (!otf.is_open()))
       throw; 
 
     // TODO
@@ -406,23 +406,29 @@ namespace microtubule {
 
     if (use_fpga) {
       // TODO: work on n_layers var
-      return Fpga->CalcDynamics(dev,STEPS_TO_WRITE, n_layers, mt_coords, type_mol);
-    } else {
-      return calc_dynamics_cpu(unsigned int n_layers); 
-    }
+      return Fpga->CalcDynamics(dev,STEPS_TO_WRITE, n_layers, coords.x, coords.y, coords.y, type_mol);
+    } 
 
+    return calc_dynamics_cpu(n_layers); 
   }
+
+
 
 
   void mt::print_length()
   {
     float y_avg = 0;;
+
+    olf << std::fixed << std::setw(6) << std::setprecision(3);    
+
     for (int i = 0; i < 13; i++) {
        y_avg += coords.y[i][NStop[i]-1];
     }
+
+    olf << (y_avg/13.0) << endl;
     // printf("avg_y %f \n", y_avg);
     
-    fprintf(olf,"%.3f \n", y_avg/13);
+    // fprintf(olf,"%.3f \n", y_avg/13);
   }
 
 
@@ -430,45 +436,53 @@ namespace microtubule {
 
   void mt::print_coords()
   {
-    int j;
+    unsigned int j;
+
+    ocf << std::fixed << std::setw(6) << std::setprecision(3);    
 
     for (int i=0; i<13; i++) {
       for (j=0; j<N_d; j++)
-        fprintf(ocf,"%.3f\t  ", coords.x[i][j]);
+        ocf << coords.x[i][j]; 
+        // fprintf(ocf,"%.3f\t  ", coords.x[i][j]);
 
       for (j=0; j<N_d; j++)
-        fprintf(ocf,"%.3f\t  ", coords.y[i][j]);
+        ocf << coords.y[i][j]; 
+        // fprintf(ocf,"%.3f\t  ", coords.y[i][j]);
 
       for (j=0; j<N_d; j++)
-        fprintf(ocf,"%.3f\t  ", coords.t[i][j]);
+        ocf << coords.t[i][j]; 
+        // fprintf(ocf,"%.3f\t  ", coords.t[i][j]);
      }
 
-     fprintf(ocf,"\n");
+     // fprintf(ocf,"\n");
+     ocf << endl; 
   }
 
   void mt::print_coords_type()
   {
-     unsigned int i,j;
+    unsigned int i,j;
 
-    for (int i=0; i<13; ++i) {
-      for (int j=0; j<N_d; ++j)
-        fprintf(otf,"%i\t  ", type_mol[i][j]);
+    for (i=0; i<13; ++i) {
+      for (j=0; j<N_d; ++j)
+        otf << type_mol[i][j];
+        // fprintf(otf,"%i\t  ", type_mol[i][j]);
     }
-     fprintf(otf,"\n");
+    otf << endl;
+     // fprintf(otf,"\n");
   }
 
 
   mt::~mt() {
-    fclose(ocf);
-    fclose(olf);
-    fclose(otf);
+    ocf.close();
+    olf.close();
+    otf.close();
 
     if (use_fpga) {
       Fpga->StopRandomGenerator(dev); 
 
       if (Fpga->close(dev) < 0) {
         cerr << "Error in Fpga Close Device\n";
-        return -1;         
+        throw;
       }      
     }
   }  

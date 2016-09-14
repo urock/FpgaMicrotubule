@@ -6,28 +6,21 @@
 *
 *******************************************/
 
-
-#include "RostaPCIeAPI.h"
-#include "rc47-api.h"
-
-#include "rc_47.h"
-#include "rand.h"
-#include "fpga.h"
-#include "mt.h"
-// #include "mt_defines.h"
-
-
-// #include "jsoncpp/json/json-forwards.h"
-// #include "jsoncpp/json/json.h"
-
 #include <fstream>
 #include <iostream>
 #include <string>  
+#include <vector>
+
+
+#include "fpga.h"
+#include "mt.h"
+
 
 using namespace std;
 using namespace microtubule;
 
 
+void calc_dt(struct timeval *tt1, struct timeval *tt2, double *tsec); 
 
 int fpga_board = -1;
 int fpga_chip = -1; 
@@ -62,13 +55,15 @@ void print_usage(char *argv[])
 
 int main(int argc, char *argv[])
 {
-  int dev;
-
   int opt;
 
   string json_file; 
 
   bool nd_set = false; 
+
+  mt  *mt_fpga;
+  mt  *mt_cpu;
+  FpgaDev *Fpga;
 
   while ((opt = getopt(argc, argv, "j:b:v:N:c")) != -1) {
     switch (opt) {
@@ -94,23 +89,23 @@ int main(int argc, char *argv[])
     return -1; 
   }
 
-  if ((N_d % 3) != ) {
+  if ((N_d % 3) != 0) {
     cerr << "N_d should be a multiple of 3. Exitting" << endl;
     return -2; 
   }
 
   if (use_fpga) {
-    FpgaDev Fpga;
-    mt      mt_fpga(&Fpga, fpga_board, fpga_chip, json_file, N_d);
+    Fpga = new FpgaDev();
+    mt_fpga = new mt(Fpga, fpga_board, fpga_chip, json_file, N_d);
   }
   
   if (use_cpu) {
-    mt mt_cpu(json_file, N_d);
+    mt_cpu = new mt(json_file, N_d);
   }
 
 
-   double dt_c[N];
-   double dt_f[N];
+   double dt_c;
+   double dt_f;
    cout << "N_d -> " << N_d << endl;
    
    cout << "STEPS_TO_WRITE -> " << STEPS_TO_WRITE << endl;
@@ -120,59 +115,62 @@ int main(int argc, char *argv[])
    int total_error = 0; 
 
    
-   for(int k=0; k < k_steps; ++k) {
+   for(unsigned int k=0; k < k_steps; ++k) {
 
       int err = 0;
       struct timeval tt1, tt2;
-      if (use_cpu==1) {
-         get_time(&tt1);
-         if (mt_cpu.calc_dynamics() < 0) { 
+      if (use_cpu) {
+         // get_time(&tt1);
+         gettimeofday(&tt1, 0);
+         if (mt_cpu->calc_dynamics() < 0) { 
             cerr << "Nan Error in cpu. Step is " << k << endl; 
             break;
          }
 
-         get_time(&tt2);
-         calc_dt(&tt1,&tt2, &dt_c[k]);
+         // get_time(&tt2);
+         gettimeofday(&tt2, 0);
+         calc_dt(&tt1,&tt2, &dt_c);
       }
       
       if (use_fpga) {
-        get_time(&tt1);
-
+        // get_time(&tt1);
+        gettimeofday(&tt1, 0);
         // TODO: work on n_layers var
-        if (mt_fpga.calc_dynamics() < 0) {
+        if (mt_fpga->calc_dynamics() < 0) {
           cerr << "Error int Fpga.CalcDynamics" << endl;
           return -1; 
         }
 
-        get_time(&tt2);
-        calc_dt(&tt1,&tt2, &dt_f[k]);
+        // get_time(&tt2);
+        gettimeofday(&tt2, 0);
+        calc_dt(&tt1,&tt2, &dt_f);
       }
       
-      printf("Step %d\n\t CPU Time = %f\n\t FPGA Time = %f\n",k,dt_c[k],dt_f[k] );
+      printf("Step %d\n\t CPU Time = %f\n\t FPGA Time = %f\n",k, dt_c, dt_f);
 
       if (use_cpu && use_fpga){
          // uncomment u1
          // err = compare_results(x_1,y_1,t_1,x_2,y_2,t_2);
          if (err) {
             total_error += err;
-            printf("Compare results failed at step = %d, errors = %d\n", k, error);
+            printf("Compare results failed at step = %d, errors = %d\n", k, total_error);
          }
       }
 
 
 
       if (use_cpu) {
-        mt_cpu.calc_kinetics();
-        mt_cpu.print_coords(); 
-        mt_cpu.print_coords_type(); 
-        mt_cpu.print_length();
+        mt_cpu->calc_kinetics();
+        mt_cpu->print_coords(); 
+        mt_cpu->print_coords_type(); 
+        mt_cpu->print_length();
       } 
 
       if (use_fpga) {
-        mt_fpga.calc_kinetics();
-        mt_fpga.print_coords(); 
-        mt_fpga.print_coords_type(); 
-        mt_fpga.print_length();
+        mt_fpga->calc_kinetics();
+        mt_fpga->print_coords(); 
+        mt_fpga->print_coords_type(); 
+        mt_fpga->print_length();
       }
       
 
@@ -200,7 +198,16 @@ int main(int argc, char *argv[])
 
 
 
+float max(float A, float B){
+   if(A>=B) return A;
+   else return B;
+}
 
+int equal(float A, float B)
+{
+   return (fabs(A - B) <= max(absTol, relTol * max(fabs(A), fabs(B))));
+
+}
 
 
 
@@ -235,16 +242,7 @@ void calc_dt(struct timeval *tt1, struct timeval *tt2, double *tsec)
    *tsec = ttv2 - ttv1;
 }
 
-float max(float A, float B){
-   if(A>=B) return A;
-   else return B;
-}
 
-int equal(float A, float B)
-{
-   return (fabs(A - B) <= max(absTol, relTol * max(fabs(A), fabs(B))));
-
-}
 
 
 

@@ -1,8 +1,7 @@
 #pragma once
 #include "rc47-api.h"
-#include "rc_47.h"
-#include "mt_defines.h"
 
+#include <vector>
 #include <iostream>
 
 #define HLS_LENGTH 0x154
@@ -52,8 +51,10 @@ namespace microtubule {
                        unsigned int         n_step,           //time steps to run 
                        unsigned int         n_layers,        // number of layers to calculate. should be a multiple of 12
                 
-                       mt_coords_t          &mt_coords,
-                       vector<vector<int> > &type
+                       std::vector<std::vector<float> > &x,
+                       std::vector<std::vector<float> > &y,
+                       std::vector<std::vector<float> > &t,
+                       std::vector<std::vector<int> > &type
                      ) ; 
 
   private: 

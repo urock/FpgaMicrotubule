@@ -231,8 +231,10 @@ int FpgaDev::CalcDynamics(  int                  dev,
                             unsigned int         n_step,           //time steps to run 
                             unsigned int         n_layers,        // number of layers to calculate. should be a multiple of 12
                 
-                            mt_coords_t          &mt_coords,
-                            vector<vector<int> > &type
+                            std::vector<std::vector<float> > &x,
+                            std::vector<std::vector<float> > &y,
+                            std::vector<std::vector<float> > &t,
+                            std::vector<std::vector<int> > &type
                           ) 
 {  
 
@@ -261,12 +263,12 @@ int FpgaDev::CalcDynamics(  int                  dev,
    for (i=0; i<13; i++)
    for (j=0; j<n_layers; j++) {
       
-      tmp.d0 = mt_coords.x[i][j];
-      tmp.d1 = mt_coords.y[i][j];    
+      tmp.d0 = x[i][j];
+      tmp.d1 = y[i][j];    
       
       
       buf_in[k++] = tmp;
-      tmp.d0 = mt_coords.t[i][j];
+      tmp.d0 = t[i][j];
       if (type[i][j] == -1) {
          tmp.d1 = 1;
       } else {
@@ -282,9 +284,7 @@ int FpgaDev::CalcDynamics(  int                  dev,
    RD_WriteDeviceReg32m(dev, CNTRL_BAR, COMMAND_REG, reg_val);
 
 
-   
-
-   
+      
    //////////////////////////////////////////////////////////////////////////////
    RD_WriteDeviceReg32m(dev, CNTRL_BAR, HLS_A, n_step);
    
@@ -365,11 +365,8 @@ printf("hls done cnt = %d, reg_val = 0x%x\n",cnt, reg_val);
    }
    
 
-   
-
    two_floats * buf_out = (two_floats *)rd_buf;
    
-
    k = 0;
    for (i=0; i<13; i++)
      for (j=0; j<n_layers; j++) {
@@ -377,9 +374,9 @@ printf("hls done cnt = %d, reg_val = 0x%x\n",cnt, reg_val);
         w0 = buf_out[k++];
         w1 = buf_out[k++]; 
         
-        mt_coords.x[i][j] = w0.d0; 
-        mt_coords.y[i][j] = w0.d1; 
-        mt_coords.t[i][j] = w1.d0; 
+        x[i][j] = w0.d0; 
+        y[i][j] = w0.d1; 
+        t[i][j] = w1.d0; 
      }     
 
    return 0;            

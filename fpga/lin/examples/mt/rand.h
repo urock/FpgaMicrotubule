@@ -13,27 +13,6 @@
 namespace microtubule {
 
 
-// class Random
-// {     
-//   public:
-//     UniRandom(unsigned long s) {
-//       init_genrand(s);
-//       r1 = 0; r2 = 0; s = 0; rho = 0;
-//       valid = false;
-//     };
-//     ~UniRandom(){};      
-//     float Normal_dist(void);
-//     double genrand_real2(void);
-
-//   private:
-//     float r1, r2, s, rho;
-//     bool valid;
-//     void init_genrand(unsigned long s);
-//     unsigned long mt[N_period]; /* the array for the state vector  */
-//     int mti;             /* mti==N_period+1 means mt[N_period] is not initialized */
-// };
-
-
 class UniRandom {
 public:
   UniRandom(unsigned int seed) {

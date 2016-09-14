@@ -1,6 +1,7 @@
 #pragma once
 #include <stdlib.h>
 #include <iostream>
+#include <iomanip>
 #include <new>
 #include <fstream>
 #include <string>  
@@ -25,7 +26,7 @@ class mt {
 public:
 
   mt(string json_name, unsigned int N_d_in);
-  mt(FpgaDev *Fpga, string json_name, unsigned int N_d_in);
+  mt(FpgaDev *Fpga_, int board, int chip, string json_name, unsigned int N_d_in);
   ~mt();
   int calc_dynamics();
   void calc_kinetics(); 
@@ -38,9 +39,13 @@ private:
 
   void init(string json_name, unsigned int N_d_in); 
   bool use_json_coeffs(float *cooefs_buf_out); 
-  int init_coords_and_type(void); 
+  void init_coords_and_type(void); 
   void addDimer (int i);
-
+  int calc_dynamics_cpu(unsigned int n_layers);
+  void shift_coords(bool up, int shift);
+  void removeDimer (int i);
+  void choose_to_shift_coords();
+  void polimerization_algorithm();  
 
   bool use_coeffs_from_json;
   bool brownian_en;
@@ -60,10 +65,10 @@ private:
   int       dev;  // fpga device handle
   bool      use_fpga; 
 
-  FILE *icf;    // input coords file
-  FILE *ocf;    // output coords file
-  FILE *olf;    // output length file
-  FILE *otf;    // output type file
+  ifstream icf;    // input coords file
+  ofstream ocf;    // output coords file
+  ofstream olf;    // output length file
+  ofstream otf;    // output type file
 
   unsigned int seeds[NUM_SEEDS];  // for random number generator used in dyncamics
 

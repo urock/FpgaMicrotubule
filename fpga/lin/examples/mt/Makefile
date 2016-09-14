@@ -11,7 +11,7 @@ ILIB = -I$(RINC)
 
 
 
-SOURCES=rc47_mt_12.cpp mt_cpu.cpp rand.cpp fpga.cpp mt.cpp
+SOURCES=rc47_mt_12.cpp mt_dynamics.cpp mt_kinetics.cpp rand.cpp fpga.cpp mt.cpp
 JSON_SRC=jsoncpp/jsoncpp.cpp
 OBJECTS=$(SOURCES:.cpp=.o)
 JSON_OBJ=jsoncpp.o
