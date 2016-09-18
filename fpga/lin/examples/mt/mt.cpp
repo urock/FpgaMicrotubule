@@ -98,15 +98,6 @@ namespace microtubule {
 
     struct timeval tt1;  
 
-    gettimeofday(&tt1, 0);
-    srand((unsigned) time(NULL));
-
-    float t1 = (float) tt1.tv_usec;
-
-    unsigned long InitRnd = (t1-(int)t1)*1e+10 + rand(); 
-
-    KineticRand = new UniRandom(InitRnd*1.7 + 0.35*rand());
-
     N_d = N_d_in;
 
 
@@ -124,6 +115,9 @@ namespace microtubule {
     kinetics_en = root.get("kinetics_en", false).asBool(); 
     const_seeds = root.get("const_seeds", false).asBool();
 
+    std::cout << "brownian_en -> " << brownian_en << std::endl;
+    std::cout << "kinetics_en -> " << kinetics_en << std::endl;    
+    std::cout << "const_seeds -> " << const_seeds << std::endl;
 
 
     if (use_coeffs_from_json) {
@@ -224,7 +218,7 @@ namespace microtubule {
        }
        
     } catch (const  std::bad_alloc& ba){
-       std::cerr << "bad_alloc caught: " << ba.what() << std::endl;
+       std::cerr << "mt::init() bad_alloc caught: " << ba.what() << std::endl;
        throw;
     }     
 
@@ -244,8 +238,8 @@ namespace microtubule {
     } else {
 
       ocf_name = root.get("ocf_cpu", "").asString();
-      olf_name = root.get("olf_fpga", "").asString();
-      otf_name = root.get("otf_fpga", "").asString();
+      olf_name = root.get("olf_cpu", "").asString();
+      otf_name = root.get("otf_cpu", "").asString();
     }
 
     //icf = fopen(icf_name, "r");
@@ -253,8 +247,10 @@ namespace microtubule {
     olf.open(olf_name);
     otf.open(otf_name);
 
-    if ((!ocf.is_open()) || (!olf.is_open()) || (!otf.is_open()))
+    if ((!ocf.is_open()) || (!olf.is_open()) || (!otf.is_open())) {
+      std::cerr << "mt::init() files opening error" << std::endl; 
       throw; 
+    }
 
     // TODO
     for(int i = 0; i < 13; ++i) {
@@ -290,6 +286,20 @@ namespace microtubule {
 
     init_coords_and_type();     
 
+
+    // init generator for kinetics
+    if (const_seeds) {
+      KineticRand = new UniRandom(12345);
+    } else {
+      gettimeofday(&tt1, 0);
+      srand((unsigned) time(NULL));
+
+      float t1 = (float) tt1.tv_usec;
+
+      unsigned long InitRnd = (t1-(int)t1)*1e+10 + rand(); 
+
+      KineticRand = new UniRandom(InitRnd*1.7 + 0.35*rand());    
+    }
   }
 
 
@@ -334,11 +344,12 @@ namespace microtubule {
 
     if (use_json_coeffs(coeff_buf)) {
 
-      for (int i = 0; i < Nc; ++i) {
-        cout << coeff_buf[i] << endl;
-      }
+      // for (int i = 0; i < Nc; ++i) {
+      //   std::cout << coeff_buf[i] << std::endl;
+      // }
 
       if (Fpga->LoadCoeffs(dev, Nc, coeff_buf) < 0) {
+        std::cerr << "mt::mt(Fpga) LoadCoeffs Error " << std::endl;
         throw; 
       }
 
@@ -347,6 +358,7 @@ namespace microtubule {
 
     if (brownian_en) {
       if (Fpga->StartRandomGenerator(dev,NUM_SEEDS, seeds) < 0) {
+        std::cerr << "mt::mt(Fpga) StartRandomGenerator Error " << std::endl;
         throw; 
       }
     }
@@ -469,6 +481,10 @@ namespace microtubule {
     }
     otf << endl;
      // fprintf(otf,"\n");
+  }
+
+  mt_coords_t* mt::get_coords() {
+    return &coords; 
   }
 
 

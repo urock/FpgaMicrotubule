@@ -478,6 +478,8 @@ int mt::calc_dynamics_cpu(unsigned int n_layers) {
 
 	static bool first_run = true;
 
+	std::cout << "calc_dynamics_cpu first_run -> " << first_run << std::endl; 
+
 	if (first_run) {
 
 		first_run = false; 
@@ -502,6 +504,9 @@ int mt::calc_dynamics_cpu(unsigned int n_layers) {
 		}
 	}
 
+	std::cout << "calc_dynamics_cpu N_d_choose -> " <<  N_d_choose << std::endl; 
+	std::cout << "calc_dynamics_cpu n_layers -> " <<  n_layers << std::endl; 	
+
 	if (N_d_choose != n_layers) {
 
 		N_d_choose = n_layers;
@@ -525,6 +530,8 @@ int mt::calc_dynamics_cpu(unsigned int n_layers) {
 		}
 
 	}
+
+	std::cout << "calc_dynamics_cpu after resize " << std::endl; 
 
 	for (int step=1; step <= STEPS_TO_WRITE; step++) {
 		if (run_step_c(coords, type_mol, brownian_en)<0) 

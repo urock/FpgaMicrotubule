@@ -20,6 +20,12 @@ using namespace std;
 
 namespace microtubule {
 
+struct mt_coords_t {
+    vector<vector<float> >  x;
+    vector<vector<float> >  y;
+    vector<vector<float> >  t;
+};  
+
 
 class mt {
 
@@ -34,6 +40,7 @@ public:
   void print_coords_type();
   void print_coords(); 
   void print_length();
+  mt_coords_t* get_coords(); 
 
 private:
 

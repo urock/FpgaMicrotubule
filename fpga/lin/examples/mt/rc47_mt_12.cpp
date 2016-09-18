@@ -11,8 +11,6 @@
 #include <string>  
 #include <vector>
 
-
-#include "fpga.h"
 #include "mt.h"
 
 
@@ -21,6 +19,8 @@ using namespace microtubule;
 
 
 void calc_dt(struct timeval *tt1, struct timeval *tt2, double *tsec); 
+int compare_results(mt_coords_t *c1, mt_coords_t *c2);
+
 
 int fpga_board = -1;
 int fpga_chip = -1; 
@@ -28,10 +28,6 @@ int fpga_chip = -1;
 bool use_cpu = false;
 bool use_fpga = false; 
 
-
-bool flag_rand = false;
-bool flag_file = false; 
-char *out_file;
 
  
 unsigned int N_d;
@@ -65,7 +61,7 @@ int main(int argc, char *argv[])
   mt  *mt_cpu;
   FpgaDev *Fpga;
 
-  while ((opt = getopt(argc, argv, "j:b:v:N:c")) != -1) {
+  while ((opt = getopt(argc, argv, "j:b:v:N:cfi:")) != -1) {
     switch (opt) {
       case 'j': json_file = string(optarg); break;
       case 'b': fpga_board = stoi(optarg); break;
@@ -108,8 +104,8 @@ int main(int argc, char *argv[])
    double dt_f;
    cout << "N_d -> " << N_d << endl;
    
-   cout << "STEPS_TO_WRITE -> " << STEPS_TO_WRITE << endl;
-   cout << "Kintetic steps -> " << k_steps << endl;
+   cout << "Dynamic steps -> " << STEPS_TO_WRITE << endl;
+   cout << "Start kintetic steps -> " << k_steps << endl;
 
 
    int total_error = 0; 
@@ -119,17 +115,27 @@ int main(int argc, char *argv[])
 
       int err = 0;
       struct timeval tt1, tt2;
-      if (use_cpu) {
-         // get_time(&tt1);
-         gettimeofday(&tt1, 0);
-         if (mt_cpu->calc_dynamics() < 0) { 
-            cerr << "Nan Error in cpu. Step is " << k << endl; 
-            break;
-         }
 
-         // get_time(&tt2);
-         gettimeofday(&tt2, 0);
-         calc_dt(&tt1,&tt2, &dt_c);
+      cout << "Step -> " << k << endl; 
+
+      if (use_cpu) {
+        // get_time(&tt1);
+        gettimeofday(&tt1, 0);
+        if (mt_cpu->calc_dynamics() < 0) { 
+           cerr << "Nan Error in mt_cpu->calc_dynamics. Step is " << k << endl; 
+           break;
+        }
+
+        // get_time(&tt2);
+        gettimeofday(&tt2, 0);
+        calc_dt(&tt1,&tt2, &dt_c);
+
+        cout << "CPU Time = " << dt_c << endl;
+
+        mt_cpu->calc_kinetics();
+        mt_cpu->print_coords(); 
+        mt_cpu->print_coords_type(); 
+        mt_cpu->print_length();         
       }
       
       if (use_fpga) {
@@ -137,42 +143,32 @@ int main(int argc, char *argv[])
         gettimeofday(&tt1, 0);
         // TODO: work on n_layers var
         if (mt_fpga->calc_dynamics() < 0) {
-          cerr << "Error int Fpga.CalcDynamics" << endl;
+          cerr << "Error in Fpga.CalcDynamics. Step is " << k << endl;
           return -1; 
         }
 
         // get_time(&tt2);
         gettimeofday(&tt2, 0);
         calc_dt(&tt1,&tt2, &dt_f);
-      }
-      
-      printf("Step %d\n\t CPU Time = %f\n\t FPGA Time = %f\n",k, dt_c, dt_f);
 
-      if (use_cpu && use_fpga){
-         // uncomment u1
-         // err = compare_results(x_1,y_1,t_1,x_2,y_2,t_2);
-         if (err) {
-            total_error += err;
-            printf("Compare results failed at step = %d, errors = %d\n", k, total_error);
-         }
-      }
+        cout << "FPGA Time = " << dt_f << endl;
 
-
-
-      if (use_cpu) {
-        mt_cpu->calc_kinetics();
-        mt_cpu->print_coords(); 
-        mt_cpu->print_coords_type(); 
-        mt_cpu->print_length();
-      } 
-
-      if (use_fpga) {
         mt_fpga->calc_kinetics();
         mt_fpga->print_coords(); 
         mt_fpga->print_coords_type(); 
         mt_fpga->print_length();
       }
       
+
+      if (use_cpu && use_fpga){
+         // uncomment u1
+         err = compare_results(mt_cpu->get_coords(), mt_fpga->get_coords());
+         if (err) {
+            total_error += err;
+            cerr << "Compare results failed, errors = " << total_error << endl;
+         }
+      }
+     
 
    } // k_steps
 
@@ -190,56 +186,36 @@ int main(int argc, char *argv[])
 
 
 
-
-
-
-   
-
-
-
-
 float max(float A, float B){
-   if(A>=B) return A;
-   else return B;
+  return (A>=B) ? A : B;
 }
 
-int equal(float A, float B)
-{
-   return (fabs(A - B) <= max(absTol, relTol * max(fabs(A), fabs(B))));
-
+int equal(float A, float B) {
+  return (fabs(A - B) <= max(absTol, relTol * max(fabs(A), fabs(B))));
 }
 
-
-
-
-int compare_results(vector<vector<float> >  & x_1, vector<vector<float> >  & y_1, vector<vector<float> >  & t_1,
-vector<vector<float> >  &  x_2, vector<vector<float> >  & y_2, vector<vector<float> >  & t_2 )
-{
-   unsigned int i,j;
-   int error = 0;
-   for(i = 0; i<13; i++)
-   for(j = 0; j<N_d; j++) {
-
-      if ((x_1[i][j]!=x_1[i][j])||(x_2[i][j]!=x_2[i][j])||(!equal(x_1[i][j], x_2[i][j])))
-      error++;
-      if ((y_1[i][j]!=y_1[i][j])||(y_2[i][j]!=y_2[i][j])||(!equal(y_1[i][j], y_2[i][j])))
-      error++;
-      if ((t_1[i][j]!=t_1[i][j])||(t_2[i][j]!=t_2[i][j])||(!equal(t_1[i][j], t_2[i][j])))
-      error++;
-
-   }
-
-
-   return error;
+int compare_results(mt_coords_t *c1, mt_coords_t *c2) {
+  unsigned int i,j;
+  int error = 0;
+  for(i = 0; i<13; i++) {
+    for(j = 0; j<N_d; j++) {
+       if ( (c1->x[i][j]!=c1->x[i][j]) || (c2->x[i][j]!=c2->x[i][j]) || (!equal(c1->x[i][j], c2->x[i][j])) )
+         error++;
+       if ( (c1->y[i][j]!=c1->y[i][j]) || (c2->y[i][j]!=c2->y[i][j]) || (!equal(c1->y[i][j], c2->y[i][j])) )
+         error++;
+       if ( (c1->t[i][j]!=c1->t[i][j]) || (c2->t[i][j]!=c2->t[i][j]) || (!equal(c1->t[i][j], c2->t[i][j])))
+         error++;
+    }
+  }
+  return error;
 }
 
 
 
-void calc_dt(struct timeval *tt1, struct timeval *tt2, double *tsec)
-{
-   double ttv1 = ((double) tt1->tv_usec) / 1000000 + tt1->tv_sec;
-   double ttv2 = ((double) tt2->tv_usec) / 1000000 + tt2->tv_sec;
-   *tsec = ttv2 - ttv1;
+void calc_dt(struct timeval *tt1, struct timeval *tt2, double *tsec) {
+  double ttv1 = ((double) tt1->tv_usec) / 1000000 + tt1->tv_sec;
+  double ttv2 = ((double) tt2->tv_usec) / 1000000 + tt2->tv_sec;
+  *tsec = ttv2 - ttv1;
 }
 
 

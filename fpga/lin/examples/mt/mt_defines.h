@@ -1,14 +1,7 @@
 #ifndef MT_DEF_H
 #define MT_DEF_H
 
-
-
-#define VAL2TO31	0x80000000
-#define VAL2TO31F	((float)(VAL2TO31))
-
-#define  NUM_UNI_VALUES 32
 #define NUM_SEEDS 10
-
 
 #define viscPF_d       		(4.3e-7*2)	//(1.1e-6  )		// (kcal/mol)*(s/nm^2)
 #define viscPF_teta_d  		(2.3e-6*2)	//(1.7e-5  )		// (kcal/mol)*s
@@ -113,13 +106,6 @@ const float Bz_2 = 0.458040982f;
 
 #define cut_off 1.0     //for deattach
 
-
-
-struct mt_coords_t {
-    vector<vector<float> >  x;
-    vector<vector<float> >  y;
-    vector<vector<float> >  t;
-};
 
 
 #endif //MT_DEF_H

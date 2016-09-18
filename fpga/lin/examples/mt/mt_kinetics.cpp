@@ -203,6 +203,9 @@ namespace microtubule {
 
 
   void mt::calc_kinetics() {
+
+    if (!kinetics_en) 
+      return; 
   
     unsigned int i,j,j1; 
       
