@@ -67,11 +67,12 @@ namespace microtubule {
 
 
 
-  void mt::shift_coords(bool up, int shift)
-  {
-     unsigned int i,j;
-     
-     if (up) {
+  void mt::shift_coords(bool up, int shift) {
+    
+    unsigned int i,j;
+    
+    if (up) {
+      std::cout << "Shift UP. shift -> " << shift << std::endl;
         for (i=0; i<13; i++){
         for (j=NStart[i]; j<NStop[i]; j++){
            
@@ -96,9 +97,10 @@ namespace microtubule {
         }
         
      } else {                     // down
+      std::cout << "Shift Down. shift -> " << shift << std::endl;
         for (i=0; i<13; i++){
         for (j=shift; j<NStop[i]; j++){
-           
+           std::cout << "Shift Down. j -> " << j << std::endl;
            coords.x[i][j - shift] = coords.x[i][j];
            coords.y[i][j - shift] = coords.y[i][j];
            coords.t[i][j - shift] = coords.t[i][j];
@@ -125,7 +127,9 @@ namespace microtubule {
 
   void mt::choose_to_shift_coords() {
 
-     unsigned int NStopMax = max_N(NStop), NStopMin = min_N(NStop);
+    unsigned int NStopMax = max_N(NStop), NStopMin = min_N(NStop);
+
+    std::cout << "NStopMax -> " << NStopMax << " NStopMin -> " << NStopMin << std::endl;  
      /*
      if (NStopMax >= N_d - 5 && NStopMin <= 16) { //Error
         printf("Error!!! NStopMax >= N_d - 5 && NStopMin <= 16 N_d = %i \n", N_d);
@@ -152,8 +156,10 @@ namespace microtubule {
      if (NStopMax >= N_d - 6 && NStopMin <= 3) {  //Error
         printf("NStopMax >= N_d - 8 && NStopMin <= 3N_d = %i \n", N_d);
      }
-     if (NStopMax >= N_d - 5)
+     if (NStopMax >= N_d - 5) {
+
         shift_coords(false, 4);
+     }
 
      if (NStopMin <= 4) {
         //printf("%iUOP:  \n",NStop[1]);
@@ -224,10 +230,16 @@ namespace microtubule {
           }
       }
     }
+
+    std::cout << "Detach done" << std::endl;
     
     polimerization_algorithm();
     
-    choose_to_shift_coords();    
+    std::cout << "polimerization_algorithm done" << std::endl;
+
+    choose_to_shift_coords();   
+
+    std::cout << "choose_to_shift_coords done" << std::endl;
   }
 
 

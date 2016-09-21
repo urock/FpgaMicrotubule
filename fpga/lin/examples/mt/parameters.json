@@ -48,8 +48,8 @@
    "otf_fpga"        :     "type_MT_coords_FPGA.txt",
 
    "brownian_en"     :     true,
-   "kinetics_en"     :     false,
-   "dynamic_steps"   :     100000,    // calc dynamics steps, write to file every "calc_dynamic" steps 
+   "kinetics_en"     :     true,
+   "dynamic_steps"   :     10000,    // calc dynamics steps, write to file every "calc_dynamic" steps 
    "const_seeds"     :     true,     //1 set to true to get determenistic dynamics every program launch
    "N_d"             :     24
 }
