@@ -454,15 +454,15 @@ namespace microtubule {
 
     for (int i=0; i<13; i++) {
       for (j=0; j<N_d; j++)
-        ocf << coords.x[i][j]; 
+        ocf << coords.x[i][j] << " ";
         // fprintf(ocf,"%.3f\t  ", coords.x[i][j]);
 
       for (j=0; j<N_d; j++)
-        ocf << coords.y[i][j]; 
+        ocf << coords.y[i][j] << " ";
         // fprintf(ocf,"%.3f\t  ", coords.y[i][j]);
 
       for (j=0; j<N_d; j++)
-        ocf << coords.t[i][j]; 
+        ocf << coords.t[i][j] << " ";
         // fprintf(ocf,"%.3f\t  ", coords.t[i][j]);
      }
 
@@ -476,7 +476,7 @@ namespace microtubule {
 
     for (i=0; i<13; ++i) {
       for (j=0; j<N_d; ++j)
-        otf << type_mol[i][j];
+        otf << type_mol[i][j] << " ";
         // fprintf(otf,"%i\t  ", type_mol[i][j]);
     }
     otf << endl;
