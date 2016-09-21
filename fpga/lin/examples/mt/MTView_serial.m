@@ -6,7 +6,7 @@ global add_kinesins;
 add_kinesins = 0; 
 global Nd;
 global catiter; catiter = 0;
-Nd = 36; % SIZE OF MICROTUBES
+Nd = 24; % SIZE OF MICROTUBES
 global delta_gamma;
 global delta_length;
 delta_gamma = 132*pi/180    +(230-80-35)*pi/180; 

@@ -30,17 +30,15 @@ bool use_fpga = false;
 
 
  
-unsigned int N_d;
 unsigned int k_steps = 100; 
 
 void print_usage(char *argv[])
 {
   cerr << "\nUsage:\n";
-  cerr << "sudo " << argv[0] << " -j json_file -b board -v cs -N N_d -c -f -i it\n";   
+  cerr << "sudo " << argv[0] << " -j json_file -b board -v cs -c -f -i it\n";   
   cerr << "-j json_file - input file with coefficients\n";
   cerr << "-b fpga board: [0-1]\n";
   cerr << "-v cs: fpga chip_select [0-3]\n";
-  cerr << "-N N_d: number of molecules in one filament\n";
   cerr << "-c: set to use cpu \n";
   cerr << "-f: set to use fpga (-c and -f could be both set) \n";  
   cerr << "-i number of kinetic steps\n" << endl; 
@@ -55,18 +53,15 @@ int main(int argc, char *argv[])
 
   string json_file; 
 
-  bool nd_set = false; 
-
   mt  *mt_fpga;
   mt  *mt_cpu;
   FpgaDev *Fpga;
 
-  while ((opt = getopt(argc, argv, "j:b:v:N:cfi:")) != -1) {
+  while ((opt = getopt(argc, argv, "j:b:v:cfi:")) != -1) {
     switch (opt) {
       case 'j': json_file = string(optarg); break;
       case 'b': fpga_board = stoi(optarg); break;
       case 'v': fpga_chip = stoi(optarg); break;
-      case 'N': N_d = stoi(optarg); nd_set =  true; break;
       case 'c': use_cpu = true; break;
       case 'f': use_fpga = true; break;      
       case 'i': k_steps = stoi(optarg); break; 
@@ -79,32 +74,22 @@ int main(int argc, char *argv[])
     return -1;
   }
 
-  if (!nd_set) {
-    cerr << "N_d not set!" << endl;
-    print_usage(argv); 
-    return -1; 
-  }
 
-  if ((N_d % 3) != 0) {
-    cerr << "N_d should be a multiple of 3. Exitting" << endl;
-    return -2; 
-  }
 
   if (use_fpga) {
     Fpga = new FpgaDev();
-    mt_fpga = new mt(Fpga, fpga_board, fpga_chip, json_file, N_d);
+    mt_fpga = new mt(Fpga, fpga_board, fpga_chip, json_file);
   }
   
   if (use_cpu) {
-    mt_cpu = new mt(json_file, N_d);
+    mt_cpu = new mt(json_file);
   }
 
 
    double dt_c;
    double dt_f;
-   cout << "N_d -> " << N_d << endl;
    
-   cout << "Dynamic steps -> " << STEPS_TO_WRITE << endl;
+   
    cout << "Start kintetic steps -> " << k_steps << endl;
 
 
@@ -198,7 +183,8 @@ int compare_results(mt_coords_t *c1, mt_coords_t *c2) {
   unsigned int i,j;
   int error = 0;
   for(i = 0; i<13; i++) {
-    for(j = 0; j<N_d; j++) {
+    // TODO checnge for real N_d
+    for(j = 0; j<24; j++) {
        if ( (c1->x[i][j]!=c1->x[i][j]) || (c2->x[i][j]!=c2->x[i][j]) || (!equal(c1->x[i][j], c2->x[i][j])) )
          error++;
        if ( (c1->y[i][j]!=c1->y[i][j]) || (c2->y[i][j]!=c2->y[i][j]) || (!equal(c1->y[i][j], c2->y[i][j])) )

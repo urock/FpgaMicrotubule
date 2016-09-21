@@ -49,6 +49,7 @@
 
    "brownian_en"     :     true,
    "kinetics_en"     :     false,
-   "calc_steps"      :     1000,    // calc dynamics steps, write to file every "calc_dynamic" steps 
-   "const_seeds"     :     true     // set to true to get determenistic dynamics every program launch
+   "dynamic_steps"   :     100000,    // calc dynamics steps, write to file every "calc_dynamic" steps 
+   "const_seeds"     :     true,     //1 set to true to get determenistic dynamics every program launch
+   "N_d"             :     24
 }

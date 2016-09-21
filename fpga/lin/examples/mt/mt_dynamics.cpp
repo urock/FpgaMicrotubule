@@ -354,24 +354,22 @@ int run_step_c(mt_coords_t  &mt_coords, vector<vector<int> > type_mol, bool flag
 			unsigned int i2 = (i==12)? 0 : (i+1);
 			unsigned int j2 = (i==12)? (j+3) : j;
 
-			calc_grad_c(i, j, i2, type_mol[i][j],  pos,
+			calc_grad_c(	i, j, i2, type_mol[i][j],  pos,
 
-			mt_coords.x[i ][j],  mt_coords.y[i][j], mt_coords.t[i][j],											// mol1 (right) - i?aaay iieaeoea, aey iaa iaiiaeyai neeu aey acaeiiaaenoaey neaaa e aaa?oo
+										mt_coords.x[i ][j],  mt_coords.y[i][j], mt_coords.t[i][j],											// mol1 (right) - i?aaay iieaeoea, aey iaa iaiiaeyai neeu aey acaeiiaaenoaey neaaa e aaa?oo
 
-			mt_coords.x[i2][j2], mt_coords.y[i2][j2], mt_coords.t[i2][j2],										// mol2 (left) - iieaeoey neaaa ii ai?eciioaee, aey iaa iaiiaeyai neeo acaeiiaaeonoaey ni?aaa
+										mt_coords.x[i2][j2], mt_coords.y[i2][j2], mt_coords.t[i2][j2],										// mol2 (left) - iieaeoey neaaa ii ai?eciioaee, aey iaa iaiiaeyai neeo acaeiiaaeonoaey ni?aaa
 
-			mt_coords.x[i][j+1],  mt_coords.y[i][j+1], mt_coords.t[i][j+1],										// mol3 (up)  - iieaeoea naa?oo ii aa?oeeaee, aey iaa iaiiaeyai neeo acaeiiaaenoaey nieco
+										mt_coords.x[i][j+1],  mt_coords.y[i][j+1], mt_coords.t[i][j+1],										// mol3 (up)  - iieaeoea naa?oo ii aa?oeeaee, aey iaa iaiiaeyai neeo acaeiiaaenoaey nieco
 
-			&lat_l_x[i ][j], &lat_l_y[i ][j], &lat_l_t[i ][j],
-			&lat_r_x[i2][j2], &lat_r_y[i2][j2], &lat_r_t[i2][j2],
+										&lat_l_x[i ][j], &lat_l_y[i ][j], &lat_l_t[i ][j],
+										&lat_r_x[i2][j2], &lat_r_y[i2][j2], &lat_r_t[i2][j2],
 
-			&long_u_x[i][j  ], &long_u_y[i][j  ], &long_u_t[i][j  ],
-			&long_d_x[i][j+1], &long_d_y[i][j+1], &long_d_t[i][j+1]    );
+										&long_u_x[i][j  ], &long_u_y[i][j  ], &long_u_t[i][j  ],
+										&long_d_x[i][j+1], &long_d_y[i][j+1], &long_d_t[i][j+1]    
+									);
 
-			if (pos==1)
-			pos = 0;
-			else
-			pos = 1;
+			pos = (pos == 1) ? 0 : 1;
 
 		}
 
@@ -474,7 +472,7 @@ return 0;
 
 
 
-int mt::calc_dynamics_cpu(unsigned int n_layers) {
+int mt::calc_dynamics_cpu() {
 
 	static bool first_run = true;
 
@@ -504,12 +502,15 @@ int mt::calc_dynamics_cpu(unsigned int n_layers) {
 		}
 	}
 
+	// TODO change when kinetics is enabled
+	unsigned int N_d_calc = NStop[0] - NStart[0]; 
+
 	std::cout << "calc_dynamics_cpu N_d_choose -> " <<  N_d_choose << std::endl; 
-	std::cout << "calc_dynamics_cpu n_layers -> " <<  n_layers << std::endl; 	
+	std::cout << "calc_dynamics_cpu N_d_calc -> " <<  N_d_calc << std::endl; 	
 
-	if (N_d_choose != n_layers) {
+	if (N_d_choose != N_d_calc) {
 
-		N_d_choose = n_layers;
+		N_d_choose = N_d_calc;
 
 		for (int p = 0; p < 13; p++) {
 
@@ -533,7 +534,9 @@ int mt::calc_dynamics_cpu(unsigned int n_layers) {
 
 	std::cout << "calc_dynamics_cpu after resize " << std::endl; 
 
-	for (int step=1; step <= STEPS_TO_WRITE; step++) {
+	unsigned int step;
+
+	for (step = 1; step <= dynamic_steps; step++) {
 		if (run_step_c(coords, type_mol, brownian_en)<0) 
 			return -1;	
 	}

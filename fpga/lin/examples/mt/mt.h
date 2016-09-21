@@ -16,7 +16,6 @@ using namespace std;
 #include "jsoncpp/json/json-forwards.h"
 #include "jsoncpp/json/json.h"
 
-#define STEPS_TO_WRITE     500         // steps in fpga. was 1000 ; 5000000*100 to almost destroy  //500000
 
 namespace microtubule {
 
@@ -31,8 +30,8 @@ class mt {
 
 public:
 
-  mt(string json_name, unsigned int N_d_in);
-  mt(FpgaDev *Fpga_, int board, int chip, string json_name, unsigned int N_d_in);
+  mt(string json_name);
+  mt(FpgaDev *Fpga_, int board, int chip, string json_name);
   ~mt();
   int calc_dynamics();
   void calc_kinetics(); 
@@ -44,11 +43,11 @@ public:
 
 private:
 
-  void init(string json_name, unsigned int N_d_in); 
+  void init(string json_name); 
   bool use_json_coeffs(float *cooefs_buf_out); 
   void init_coords_and_type(void); 
   void addDimer (int i);
-  int calc_dynamics_cpu(unsigned int n_layers);
+  int calc_dynamics_cpu();
   void shift_coords(bool up, int shift);
   void removeDimer (int i);
   void choose_to_shift_coords();
@@ -61,9 +60,11 @@ private:
 
   unsigned int N_d;
   // TODO: work on n_layers in calc dynamics function!!!
-  unsigned int n_layers;      //length of MT with counting shifts/ should be a multiple of 3
+  unsigned int n_layers;      //length of MT with counting shifts
   unsigned int NStop[13];     //numbers of last monomers;
   unsigned int NStart[13];    //numbers of first monomers;
+
+  unsigned int dynamic_steps; 
 
   mt_coords_t coords;
   vector<vector<int> > type_mol;

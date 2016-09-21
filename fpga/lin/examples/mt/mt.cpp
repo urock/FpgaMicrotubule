@@ -94,12 +94,9 @@ namespace microtubule {
   }
 
 
-  void mt::init(string json_name, unsigned int N_d_in) {
+  void mt::init(string json_name) {
 
     struct timeval tt1;  
-
-    N_d = N_d_in;
-
 
     Json::Value root;
 
@@ -115,10 +112,14 @@ namespace microtubule {
     kinetics_en = root.get("kinetics_en", false).asBool(); 
     const_seeds = root.get("const_seeds", false).asBool();
 
+    dynamic_steps = root.get("dynamic_steps", 10000).asInt();
+    N_d = root.get("N_d", 10000).asInt();
+
     std::cout << "brownian_en -> " << brownian_en << std::endl;
     std::cout << "kinetics_en -> " << kinetics_en << std::endl;    
     std::cout << "const_seeds -> " << const_seeds << std::endl;
-
+    std::cout << "Dynamic steps -> " << dynamic_steps << std::endl;
+    std::cout << "N_d -> " << N_d << std::endl;
 
     if (use_coeffs_from_json) {
       printf("Using coeeficients from json\n");
@@ -253,24 +254,23 @@ namespace microtubule {
     }
 
     // TODO
-    for(int i = 0; i < 13; ++i) {
-      NStop[i] = N_d - 1;
-      NStart[i] = NStop[i] - nullHigh;
-    }
-    n_layers = NStop[0] - NStart[0];
+    // for(int i = 0; i < 13; ++i) {
+    //   NStop[i] = N_d - 1;
+    //   NStart[i] = NStop[i] - nullHigh;
+    // }
+    // n_layers = NStop[0] - NStart[0];
 
     // origin code
 
-    /*
+    
     for(int i = 0; i < 13; i++) {
       NStop[i] = N_d - nullHigh;
-   }
-   for(int i = 0; i < 13; i++) {
       NStart[i] = 0;
-   }
-   n_layers = NStop[0] - NStart[0];
+    }
 
-   */
+    n_layers = NStop[0] - NStart[0];
+
+   
 
     if (brownian_en) {
       // set seed vals
@@ -303,14 +303,14 @@ namespace microtubule {
   }
 
 
-  mt::mt(string json_name, unsigned int N_d_in) : Fpga (NULL) {
+  mt::mt(string json_name) : Fpga (NULL) {
 
     std::cout << "MT constructor CPU" << std::endl;
 
     // if (Fpga == NULL)
     //   std::cout << "Fpga = NULL" << std::endl;
     
-    init(json_name, N_d_in); 
+    init(json_name); 
 
     use_fpga = false; 
 
@@ -318,7 +318,7 @@ namespace microtubule {
 
 
 
-  mt::mt(FpgaDev *Fpga_, int board, int chip, string json_name, unsigned int N_d_in) : 
+  mt::mt(FpgaDev *Fpga_, int board, int chip, string json_name) : 
   Fpga (Fpga_)
 
   {
@@ -339,7 +339,7 @@ namespace microtubule {
     }
 
 
-    init(json_name, N_d_in); 
+    init(json_name); 
   
 
     if (use_json_coeffs(coeff_buf)) {
@@ -385,19 +385,21 @@ namespace microtubule {
         coords.t[i][j] = 0.0;
       }
     }
-     /*
-        //
-        for (i=0; i<13; i++)  {
-           x[i][N_d-5] = 0.6;
-           t[i][N_d-5] = 0.2;
-        }
-        for (j=N_d-4; j<N_d; j++)
-        for (i=0; i<13; i++)  {
-           x[i][j] = x[i][j-1] + 2*Rad*sinf(t[i][j-1]);
-           y[i][j] = y[i][j-1] + 2*Rad*cosf(t[i][j-1]);
-           t[i][j] = t[i][j-1];
-        }
-     */
+     
+    // comment
+    for (i=0; i<13; i++)  {
+       coords.x[i][N_d-5 - nullHigh] = 0.6;
+       coords.t[i][N_d-5 - nullHigh] = 0.2;
+    }
+    for (j=N_d-4 - nullHigh; j<N_d; j++)
+      for (i=0; i<13; i++)  {
+         coords.x[i][j] = coords.x[i][j-1] + 2*Rad*sinf(coords.t[i][j-1]);
+         coords.y[i][j] = coords.y[i][j-1] + 2*Rad*cosf(coords.t[i][j-1]);
+         coords.t[i][j] = coords.t[i][j-1];
+      }
+    // end comment
+
+
     for (i=0; i<13; i++) {
        for (j=NStart[i]; j<NStop[i]; j++) { 
           type_mol[i][j] = 1;  // T
@@ -418,10 +420,10 @@ namespace microtubule {
 
     if (use_fpga) {
       // TODO: work on n_layers var
-      return Fpga->CalcDynamics(dev,STEPS_TO_WRITE, n_layers, coords.x, coords.y, coords.y, type_mol);
+      return Fpga->CalcDynamics(dev,dynamic_steps, n_layers, coords.x, coords.y, coords.y, type_mol);
     } 
 
-    return calc_dynamics_cpu(n_layers); 
+    return calc_dynamics_cpu(); 
   }
 
 
