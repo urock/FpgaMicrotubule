@@ -198,14 +198,22 @@ int FpgaDev::GetIndexByDev(int dev) {
 
     unsigned int reg_val;
 
+    int index = GetIndexByDev(dev); 
+
+    if (index == -1) {
+
+      std::cerr << "Error getting index by dev num" << std::endl;
+      return -1; 
+    }    
+
     for (int i = 0; i < NumCoeffs; ++i) {
-      wr_buf[dev][i] = reinterpret_cast<unsigned int&>(coeffs[i]); 
+      wr_buf[index][i] = reinterpret_cast<unsigned int&>(coeffs[i]); 
       // equal??
       // wr_buf[dev][i] = *reinterpret_cast<unsigned int*>(&coeffs[i]); 
     }
 
 
-    if (fpga_write_to_axi(dev, wr_buf[dev], 64*sizeof(float), 0x20000000 + coeffs_ddr_offset) < 0){
+    if (fpga_write_to_axi(dev, wr_buf[index], 64*sizeof(float), 0x20000000 + coeffs_ddr_offset) < 0){
        fprintf (stderr,"Error in fpga_write_to_axi\n");
        RD_ReadDeviceReg32m(dev, CNTRL_BAR, MasterMemRdTotalCnt, reg_val);
        fprintf (stderr,"MasterMemRdTotalCnt 0x%x\n", reg_val);
