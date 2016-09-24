@@ -300,6 +300,8 @@ namespace microtubule {
 
       KineticRand = new UniRandom(InitRnd*1.7 + 0.35*rand());    
     }
+
+    std::cout << "End of common init" << std::endl;
   }
 
 
