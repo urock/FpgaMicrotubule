@@ -204,7 +204,9 @@ int FpgaDev::GetIndexByDev(int dev) {
 
       std::cerr << "Error getting index by dev num" << std::endl;
       return -1; 
-    }    
+    }   
+
+   std::cout << " Fpga load coefs " << std::endl;
 
     for (int i = 0; i < NumCoeffs; ++i) {
       wr_buf[index][i] = reinterpret_cast<unsigned int&>(coeffs[i]); 
@@ -253,6 +255,8 @@ int FpgaDev::CalcDynamics(  int                  dev,
     return -2;
   }
 
+   std::cout << " Fpga Calc dyn " << std::endl;
+   
    two_floats tmp; 
    two_floats w0, w1;
    
@@ -263,7 +267,7 @@ int FpgaDev::CalcDynamics(  int                  dev,
    
    int k = 0; // ddr buffer index
    
-   two_floats * buf_in = (two_floats *)wr_buf;
+   two_floats * buf_in = (two_floats *)wr_buf[index];
    
    // 16 bytes for each molecule 
          
@@ -295,7 +299,7 @@ int FpgaDev::CalcDynamics(  int                  dev,
       
    //////////////////////////////////////////////////////////////////////////////
    RD_WriteDeviceReg32m(dev, CNTRL_BAR, HLS_A, n_step);
-   
+  /* 
    int p2 = 0;
    switch(n_layers) {
       case 12: p2 = 0; break;
@@ -310,9 +314,10 @@ int FpgaDev::CalcDynamics(  int                  dev,
       case 216: p2 = 9; break;
       default: p2 = 2;  
    }
-   
-   RD_WriteDeviceReg32m(dev, CNTRL_BAR, HLS_B, p2);
+   */
+   RD_WriteDeviceReg32m(dev, CNTRL_BAR, HLS_B, n_layers);
 
+   std::cout << "Fpga calc dyn: before write `to axi" << std::endl;
 
    unsigned int size_dw = (((4*n_layers*13)+32)/32); // pcie transfer size should be multiple of 128 bytes 
    
@@ -332,6 +337,7 @@ int FpgaDev::CalcDynamics(  int                  dev,
    }
    
 
+   std::cout << "Fpga calc dyn: after write `to axi" << std::endl;
    
 
    //////////////////////////////////start hls///////////////////////////////////

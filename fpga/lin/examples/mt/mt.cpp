@@ -346,9 +346,9 @@ namespace microtubule {
 
     if (use_json_coeffs(coeff_buf)) {
 
-      for (int i = 0; i < Nc; ++i) {
-        std::cout << coeff_buf[i] << std::endl;
-      }
+    //  for (int i = 0; i < Nc; ++i) {
+    //    std::cout << coeff_buf[i] << std::endl;
+    //  }
 
       if (Fpga->LoadCoeffs(dev, Nc, coeff_buf) < 0) {
         std::cerr << "mt::mt(Fpga) LoadCoeffs Error " << std::endl;
