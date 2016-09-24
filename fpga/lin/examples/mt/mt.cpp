@@ -419,8 +419,9 @@ namespace microtubule {
   int mt::calc_dynamics() {
 
     if (use_fpga) {
-      // TODO: work on n_layers var
-      return Fpga->CalcDynamics(dev,dynamic_steps, n_layers, coords.x, coords.y, coords.y, type_mol);
+      unsigned int N_d_calc = NStop[0] - NStart[0]; 
+      assert ((N_d_calc % 3) == 0); 
+      return Fpga->CalcDynamics(dev,dynamic_steps, N_d_calc, coords.x, coords.y, coords.y, type_mol);
     } 
 
     return calc_dynamics_cpu(); 
