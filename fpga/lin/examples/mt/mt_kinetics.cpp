@@ -66,34 +66,36 @@ namespace microtubule {
   }
 
 
-
   void mt::shift_coords(bool up, int shift) {
-    
+
     unsigned int i,j;
-    
+//    for (j = 0; j < 24; j++){
+//        	std::cout << "y["<<j<<"] -> " << coords.y[8][j] << std::endl;
+//        }
+//        std::cout << "NStop " << NStop[8] << std::endl;
+
     if (up) {
       std::cout << "Shift UP. shift -> " << shift << std::endl;
-        for (i=0; i<13; i++){
-        for (j=NStart[i]; j<NStop[i]; j++){
-           
-          coords.x[i][j + shift] = coords.x[i][j];
-          coords.y[i][j + shift] = coords.y[i][j];
-          coords.t[i][j + shift] = coords.t[i][j];
-          type_mol[i][j + shift] = type_mol[i][j];
-        
+        for (i=0; i<13; i++){					//NStop > shift!!!!! otherwise causes error
+        for (j = NStop[i]; j > NStart[i]; j--){
+
+          coords.x[i][j - 1 + shift] = coords.x[i][j - 1];
+          coords.y[i][j - 1 + shift] = coords.y[i][j - 1];
+          coords.t[i][j - 1 + shift] = coords.t[i][j - 1];
+          type_mol[i][j - 1 + shift] = type_mol[i][j - 1];
+
         }
         NStop[i] += shift;
         }
-        printf("UP!%f", coords.y[1][4+8]);
         //NStart[i] += shift;
         n_layers += shift;
-        
         for (i=0; i<13; i++)
-        for (j = shift-1; j >= 0; j-- ){
-          coords.x[i][j] = coords.x[i][j + 1];     //?need to test
-          coords.y[i][j] = coords.y[i][j + 1] - 2*Rad;
-          coords.t[i][j] = 0;
-          type_mol[i][j] = 0;  //todo  was 'D'
+        for (j = shift; j > NStart[i]; j--){
+//         	std::cout << "Shift UP i, j = "<<i<<" "<<j-1<<"  ----error? /n" << std::endl;
+          coords.x[i][j-1] = coords.x[i][j];     //?need to test
+          coords.y[i][j-1] = coords.y[i][j] - 2*Rad;
+          coords.t[i][j-1] = 0;
+          type_mol[i][j-1] = 0;  //todo  was 'D'
         }
         
      } else {                     // down
@@ -120,7 +122,11 @@ namespace microtubule {
         coords.t[i][j] = 0;
         type_mol[i][j] = -1; //todo was '-' 
      }
-     
+//     for (j = 0; j < 24; j++){
+//        	std::cout << "y["<<j<<"] -> " << coords.y[8][j] << std::endl;
+//        }
+//        std::cout << "NStop " << NStop[8] << std::endl;
+
   }
 
 
@@ -156,10 +162,8 @@ namespace microtubule {
      if (NStopMax >= N_d - 6 && NStopMin <= 3) {  //Error
         printf("NStopMax >= N_d - 8 && NStopMin <= 3N_d = %i \n", N_d);
      }
-     if (NStopMax >= N_d - 5) {
-
+     if (NStopMax >= N_d - 5)
         shift_coords(false, 4);
-     }
 
      if (NStopMin <= 4) {
         //printf("%iUOP:  \n",NStop[1]);
