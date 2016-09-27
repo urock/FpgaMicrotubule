@@ -25,6 +25,10 @@
 #define MAX_BOARDS   (MAX_RC47_BOARDS)
 #define MAX_DEVS     (MAX_RC47_BOARDS * 5)
 
+
+#define SIZE_DWORD  0x80*(int)(((2*36*13)/(float)0x80+1))
+#define SIZE_BYTE   8*SIZE_DWORD
+
 namespace microtubule {
 
   typedef struct {
@@ -66,8 +70,10 @@ namespace microtubule {
     struct pci_device pd[MAX_DEVS];
     
 
-    unsigned int   *wr_buf[MAX_DEVS], *wr_buf_free[MAX_DEVS];
-    unsigned int   *rd_buf[MAX_DEVS], *rd_buf_free[MAX_DEVS];      
+    // unsigned int   *wr_buf[MAX_DEVS], *wr_buf_free[MAX_DEVS];
+    // unsigned int   *rd_buf[MAX_DEVS], *rd_buf_free[MAX_DEVS];      
+    unsigned int   *wr_buf, *wr_buf_free;
+    unsigned int   *rd_buf, *rd_buf_free;    
 
     int num_boards = -1; 
 

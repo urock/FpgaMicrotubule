@@ -42,7 +42,7 @@ extern float teta0_D;
 extern float teta0_T; 	
 
 
-vector<vector<int> > type;//[13][N_d];		
+// vector<vector<int> > type;//[13][N_d];		
 
 
 vector<vector<float> >lat_l_x;//[13][N_d+1];
@@ -494,7 +494,7 @@ int mt::calc_dynamics_cpu() {
 		long_d_x.resize(13);
 		long_d_y.resize(13);
 		long_d_t.resize(13);
-		type.resize(13);
+		// type.resize(13);
 
 		if (brownian_en) {
 			for (int jj=0; jj<10; jj++) 
@@ -526,7 +526,7 @@ int mt::calc_dynamics_cpu() {
 			long_d_x[p].resize(N_d_choose+1);
 			long_d_y[p].resize(N_d_choose+1);
 			long_d_t[p].resize(N_d_choose+1);
-			type[p].resize(N_d_choose);
+			// type[p].resize(N_d_choose);
 			
 		}
 

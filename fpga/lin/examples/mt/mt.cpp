@@ -404,7 +404,7 @@ namespace microtubule {
 
     for (i=0; i<13; i++) {
        for (j=NStart[i]; j<NStop[i]; j++) { 
-          type_mol[i][j] = 1;  // T
+          type_mol[i][j] = 0;  // D
        }
        /*for(j = NStart[i]-1; j >= 0; j-- ){
        type_mol[i][j] = 0;  *///  'D'   

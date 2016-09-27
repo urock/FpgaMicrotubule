@@ -100,12 +100,12 @@ namespace microtubule {
     
     ///////////////////////////////////////////////////////////////////////////////
     
-    if (create_page_alligned_buffer(0x100000, &wr_buf[index], &wr_buf_free[index])) {
+    if (create_page_alligned_buffer(SIZE_BYTE, &wr_buf, &wr_buf_free)) {
       fprintf (stderr,"Error memory allocation for wr_buf\n");
       return -8;
     }
 
-    if (create_page_alligned_buffer(0x100000, &rd_buf[index], &rd_buf_free[index])) {
+    if (create_page_alligned_buffer(SIZE_BYTE, &rd_buf, &rd_buf_free)) {
       fprintf (stderr,"Error memory allocation for rd_buf\n");
       return -8;
     }  
@@ -138,8 +138,8 @@ int FpgaDev::GetIndexByDev(int dev) {
       return -1; 
     }
 
-    free(wr_buf_free[index]);
-    free(rd_buf_free[index]);
+    free(wr_buf_free);
+    free(rd_buf_free);
 
     close(dev);
 
@@ -209,13 +209,13 @@ int FpgaDev::GetIndexByDev(int dev) {
    std::cout << " Fpga load coefs " << std::endl;
 
     for (int i = 0; i < NumCoeffs; ++i) {
-      wr_buf[index][i] = reinterpret_cast<unsigned int&>(coeffs[i]); 
+      wr_buf[i] = reinterpret_cast<unsigned int&>(coeffs[i]); 
       // equal??
       // wr_buf[dev][i] = *reinterpret_cast<unsigned int*>(&coeffs[i]); 
     }
 
 
-    if (fpga_write_to_axi(dev, wr_buf[index], 64*sizeof(float), 0x20000000 + coeffs_ddr_offset) < 0){
+    if (fpga_write_to_axi(dev, wr_buf, 64*sizeof(float), 0x20000000 + coeffs_ddr_offset) < 0){
        fprintf (stderr,"Error in fpga_write_to_axi\n");
        RD_ReadDeviceReg32m(dev, CNTRL_BAR, MasterMemRdTotalCnt, reg_val);
        fprintf (stderr,"MasterMemRdTotalCnt 0x%x\n", reg_val);
@@ -255,7 +255,7 @@ int FpgaDev::CalcDynamics(  int                  dev,
     return -2;
   }
 
-   std::cout << " Fpga Calc dyn " << std::endl;
+   std::cout << " Fpga Calc dyn n_layers -> " << n_layers  << std::endl;
    
    two_floats tmp; 
    two_floats w0, w1;
@@ -267,7 +267,7 @@ int FpgaDev::CalcDynamics(  int                  dev,
    
    int k = 0; // ddr buffer index
    
-   two_floats * buf_in = (two_floats *)wr_buf[index];
+   two_floats * buf_in = (two_floats *)wr_buf;
    
    // 16 bytes for each molecule 
          
@@ -324,7 +324,7 @@ int FpgaDev::CalcDynamics(  int                  dev,
    unsigned int size_tf = 0x80*(int)((2*n_layers*13)/(float)0x80+1);
    
    // fpga_write_to_axi needs transfers size in bytes
-   if (fpga_write_to_axi(dev, wr_buf[index], size_tf*sizeof(two_floats), 0x20000000) < 0){
+   if (fpga_write_to_axi(dev, wr_buf, size_tf*sizeof(two_floats), 0x20000000) < 0){
       fprintf (stderr,"Error in fpga_write_to_axi\n");
       RD_ReadDeviceReg32m(dev, CNTRL_BAR, MasterMemRdTotalCnt, reg_val);
       fprintf (stderr,"MasterMemRdTotalCnt 0x%x\n", reg_val);
@@ -367,7 +367,7 @@ RD_ReadDeviceReg32m(dev, CNTRL_BAR, COMMAND_REG, reg_val);
 printf("hls done cnt = %d, reg_val = 0x%x\n",cnt, reg_val); 
    
    ///////////////////////read data from fpga ddr 
-   if (fpga_read_from_axi(dev, 0x20000000, size_tf*sizeof(two_floats) rd_buf[index]) < 0){
+   if (fpga_read_from_axi(dev, 0x20000000, size_tf*sizeof(two_floats), rd_buf) < 0){
       fprintf (stderr,"Error in fpga_read_from_axi\n");
       RD_ReadDeviceReg32m(dev, CNTRL_BAR, MasterMemRdTotalCnt, reg_val);
       fprintf (stderr,"MasterMemRdTotalCnt 0x%x\n", reg_val);
