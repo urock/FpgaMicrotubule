@@ -1,6 +1,6 @@
 // Configuration options
 {
-    "use_json"       :     true,      // flag to use coeeficients from this file
+    "use_json"       :     false,      // flag to use coeeficients from this file
 
     // (kcal/mol)*(s/nm^2)
    "viscPF"          :     8.6e-7,     
@@ -49,7 +49,7 @@
 
    "brownian_en"     :     false,
    "kinetics_en"     :     false,
-   "dynamic_steps"   :     10000,    // calc dynamics steps, write to file every "calc_dynamic" steps 
+   "dynamic_steps"   :     1000,    // calc dynamics steps, write to file every "calc_dynamic" steps 
    "const_seeds"     :     true,     //1 set to true to get determenistic dynamics every program launch
    "N_d"             :     24
 }
