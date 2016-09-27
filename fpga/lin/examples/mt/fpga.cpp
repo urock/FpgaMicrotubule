@@ -319,10 +319,12 @@ int FpgaDev::CalcDynamics(  int                  dev,
 
    std::cout << "Fpga calc dyn: before write `to axi" << std::endl;
 
-   unsigned int size_dw = (((4*n_layers*13)+32)/32); // pcie transfer size should be multiple of 128 bytes 
+   // unsigned int size_dw = (((4*n_layers*13)+32)/32); // pcie transfer size should be multiple of 128 bytes 
+
+   unsigned int size_tf = 0x80*(int)((2*n_layers*13)/(float)0x80+1);
    
    // fpga_write_to_axi needs transfers size in bytes
-   if (fpga_write_to_axi(dev, wr_buf[index], 4*size_dw, 0x20000000) < 0){
+   if (fpga_write_to_axi(dev, wr_buf[index], size_tf*sizeof(two_floats), 0x20000000) < 0){
       fprintf (stderr,"Error in fpga_write_to_axi\n");
       RD_ReadDeviceReg32m(dev, CNTRL_BAR, MasterMemRdTotalCnt, reg_val);
       fprintf (stderr,"MasterMemRdTotalCnt 0x%x\n", reg_val);
@@ -335,7 +337,7 @@ int FpgaDev::CalcDynamics(  int                  dev,
       
       return -2;
    }
-   
+
 
    std::cout << "Fpga calc dyn: after write `to axi" << std::endl;
    
@@ -365,7 +367,7 @@ RD_ReadDeviceReg32m(dev, CNTRL_BAR, COMMAND_REG, reg_val);
 printf("hls done cnt = %d, reg_val = 0x%x\n",cnt, reg_val); 
    
    ///////////////////////read data from fpga ddr 
-   if (fpga_read_from_axi(dev, 0x20000000, 4*size_dw, rd_buf[index]) < 0){
+   if (fpga_read_from_axi(dev, 0x20000000, size_tf*sizeof(two_floats) rd_buf[index]) < 0){
       fprintf (stderr,"Error in fpga_read_from_axi\n");
       RD_ReadDeviceReg32m(dev, CNTRL_BAR, MasterMemRdTotalCnt, reg_val);
       fprintf (stderr,"MasterMemRdTotalCnt 0x%x\n", reg_val);
