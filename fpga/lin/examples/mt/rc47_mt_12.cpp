@@ -333,6 +333,10 @@ vector<vector<float> >  & t_out
 	
 	//////////////////////////////////////////////////////////////////////////////
 	RD_WriteDeviceReg32m(dev, CNTRL_BAR, HLS_A, n_step);
+	RD_WriteDeviceReg32m(dev, CNTRL_BAR, HLS_B, N_d);
+
+
+	
 	
 	if (fpga_write_to_axi(dev, wr_buf, SIZE_DWORD*sizeof(two_floats), 0x20000000) < 0){
 		fprintf (stderr,"Error in fpga_write_to_axi\n");
@@ -631,13 +635,13 @@ unsigned	int i,j;
 
 	for (i=0; i<13; i++) {
 		for (j=0; j<N_d; j++)
-		fprintf(f_p,"%.3f\t  ", x[i][j]);
+		fprintf(f_p,"%.3f  ", x[i][j]);
 
 		for (j=0; j<N_d; j++)
-		fprintf(f_p,"%.3f\t  ", y[i][j]);
+		fprintf(f_p,"%.3f  ", y[i][j]);
 
 		for (j=0; j<N_d; j++)
-		fprintf(f_p,"%.3f\t  ", t[i][j]);
+		fprintf(f_p,"%.3f  ", t[i][j]);
 	}
 
 	fprintf(f_p,"\n");
