@@ -476,7 +476,7 @@ int mt::calc_dynamics_cpu() {
 
 	static bool first_run = true;
 
-	std::cout << "calc_dynamics_cpu first_run -> " << first_run << std::endl; 
+	// std::cout << "calc_dynamics_cpu first_run -> " << first_run << std::endl; 
 
 	if (first_run) {
 
@@ -505,7 +505,7 @@ int mt::calc_dynamics_cpu() {
 	// TODO change when kinetics is enabled
 	unsigned int N_d_calc = NStop[0] - NStart[0]; 
 
-	std::cout << "calc_dynamics_cpu N_d_choose -> " <<  N_d_choose << std::endl; 
+	// std::cout << "calc_dynamics_cpu N_d_choose -> " <<  N_d_choose << std::endl; 
 	std::cout << "calc_dynamics_cpu N_d_calc -> " <<  N_d_calc << std::endl; 	
 
 	if (N_d_choose != N_d_calc) {
@@ -531,8 +531,6 @@ int mt::calc_dynamics_cpu() {
 		}
 
 	}
-
-	std::cout << "calc_dynamics_cpu after resize " << std::endl; 
 
 	unsigned int step;
 

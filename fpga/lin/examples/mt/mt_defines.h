@@ -99,7 +99,7 @@ const float Bz_2 = 0.458040982f;
 #define concentration 10.0f //soluble tubulin concentration, uM 
 
 
-#define nullHigh 12        //indent from top at the beginning
+#define nullHigh 0        //indent from top at the beginning
 
 #define absTol    0.001f
 #define relTol    0.001f

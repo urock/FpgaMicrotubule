@@ -336,7 +336,7 @@ namespace microtubule {
     dev = Fpga->open(board, chip);
 
     if (dev == -1) {
-      cerr << "mt::mt(Fpga) Error in Fpga Open Device\n";
+      std::cerr << "mt::mt(Fpga) Error in Fpga Open Device\n";
       throw;      
     }
 
@@ -349,7 +349,7 @@ namespace microtubule {
     //  for (int i = 0; i < Nc; ++i) {
     //    std::cout << coeff_buf[i] << std::endl;
     //  }
-
+      std::cout << "LoadCoeffs" << std::endl;
       if (Fpga->LoadCoeffs(dev, Nc, coeff_buf) < 0) {
         std::cerr << "mt::mt(Fpga) LoadCoeffs Error " << std::endl;
         throw; 
@@ -359,6 +359,7 @@ namespace microtubule {
 
 
     if (brownian_en) {
+      std::cout << "StartRandomGenerator" << std::endl; 
       if (Fpga->StartRandomGenerator(dev,NUM_SEEDS, seeds) < 0) {
         std::cerr << "mt::mt(Fpga) StartRandomGenerator Error " << std::endl;
         throw; 
@@ -372,49 +373,83 @@ namespace microtubule {
 
 
   void mt::init_coords_and_type() {
+
+    std::cout << "init_coords_and_type start" << std::endl; 
     unsigned int i,j;
     for (i=0; i<13; i++) {
       coords.y[i][0] = 2.0f*6/13*(i+1);
     }
-    for (j=1; j<N_d; j++)   {//-4
-      for (i=0; i<13; i++) {
-        coords.y[i][j] = coords.y[i][j-1] + 2.0f*Rad;
-      }
-    }
-    for (j=0; j<N_d; j++)    { //-5 
+    // for (j=1; j<N_d; j++)   {//-4
+    //   for (i=0; i<13; i++) {
+    //     coords.y[i][j] = coords.y[i][j-1] + 2.0f*Rad;
+    //   }
+    // }
+
+    // orig code
+    for (j=1; j<N_d-4; j++)
+      for (i=0; i<13; i++)
+        coords.y[i][j] = coords.y[i][j-1] + 2.0f*Rad;    
+
+
+    // for (j=0; j<N_d; j++)    { //-5 
+    //   for (i=0; i<13; i++)  {
+    //     coords.x[i][j] = 0.0;
+    //     coords.t[i][j] = 0.0;
+    //   }
+    // }
+
+    // orig code
+    for (j=0; j<N_d-5; j++) {
       for (i=0; i<13; i++)  {
+
         coords.x[i][j] = 0.0;
         coords.t[i][j] = 0.0;
-      }
-    }
+      }    
+    } 
      
-    // comment
+
+    // nullhigh = 0, so it equals orig code
     for (i=0; i<13; i++)  {
        coords.x[i][N_d-5 - nullHigh] = 0.6;
        coords.t[i][N_d-5 - nullHigh] = 0.2;
     }
-    for (j=N_d-4 - nullHigh; j<N_d; j++)
+
+
+    for (j=N_d-4 - nullHigh; j<N_d; j++) {
       for (i=0; i<13; i++)  {
          coords.x[i][j] = coords.x[i][j-1] + 2*Rad*sinf(coords.t[i][j-1]);
          coords.y[i][j] = coords.y[i][j-1] + 2*Rad*cosf(coords.t[i][j-1]);
          coords.t[i][j] = coords.t[i][j-1];
       }
-    // end comment
+    }
+
+
 
 
     for (i=0; i<13; i++) {
        for (j=NStart[i]; j<NStop[i]; j++) { 
           type_mol[i][j] = 0;  // D
        }
-       /*for(j = NStart[i]-1; j >= 0; j-- ){
-       type_mol[i][j] = 0;  *///  'D'   
-      for(j = NStop[i]; j < N_d; j++) {
-         coords.x[i][j] = 0;      
-         coords.y[i][j] = -100.0;
-         coords.t[i][j] = 0;
-         type_mol[i][j] = -1; // '-'   
-      }
-    }
+    }    
+
+
+
+    // new code
+    // for (i=0; i<13; i++) {
+    //    for (j=NStart[i]; j<NStop[i]; j++) { 
+    //       type_mol[i][j] = 0;  // D
+    //    }
+    //    /*for(j = NStart[i]-1; j >= 0; j-- ){
+    //    type_mol[i][j] = 0;  *///  'D'   
+    //   for(j = NStop[i]; j < N_d; j++) {
+    //      coords.x[i][j] = 0;      
+    //      coords.y[i][j] = -100.0;
+    //      coords.t[i][j] = 0;
+    //      type_mol[i][j] = -1; // '-'   
+    //   }
+    // }
+
+    std::cout << "init_coords_and_type end" << std::endl; 
   }
 
 
@@ -422,8 +457,9 @@ namespace microtubule {
 
     if (use_fpga) {
       unsigned int N_d_calc = NStop[0] - NStart[0]; 
+      std::cout << "N_d dyn FPGA -> " << N_d_calc << std::endl; 
       assert ((N_d_calc % 3) == 0); 
-      return Fpga->CalcDynamics(dev,dynamic_steps, N_d_calc, coords.x, coords.y, coords.y, type_mol);
+      return Fpga->CalcDynamics(dev,dynamic_steps, N_d_calc, coords.x, coords.y, coords.t, type_mol);
     } 
 
     return calc_dynamics_cpu(); 

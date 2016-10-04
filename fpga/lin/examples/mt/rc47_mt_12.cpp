@@ -115,7 +115,7 @@ int main(int argc, char *argv[])
         gettimeofday(&tt2, 0);
         calc_dt(&tt1,&tt2, &dt_c);
 
-        cout << "CPU Time = " << dt_c << endl;
+        // cout << "CPU Time = " << dt_c << endl;
 
         mt_cpu->calc_kinetics();
         mt_cpu->print_coords(); 
@@ -136,7 +136,7 @@ int main(int argc, char *argv[])
         gettimeofday(&tt2, 0);
         calc_dt(&tt1,&tt2, &dt_f);
 
-        cout << "FPGA Time = " << dt_f << endl;
+        // cout << "FPGA Time = " << dt_f << endl;
 
         mt_fpga->calc_kinetics();
         mt_fpga->print_coords(); 
@@ -184,7 +184,7 @@ int compare_results(mt_coords_t *c1, mt_coords_t *c2) {
   int error = 0;
   for(i = 0; i<13; i++) {
     // TODO checnge for real N_d
-    for(j = 0; j<24; j++) {
+    for(j = 0; j<6; j++) {
        if ( (c1->x[i][j]!=c1->x[i][j]) || (c2->x[i][j]!=c2->x[i][j]) || (!equal(c1->x[i][j], c2->x[i][j])) )
          error++;
        if ( (c1->y[i][j]!=c1->y[i][j]) || (c2->y[i][j]!=c2->y[i][j]) || (!equal(c1->y[i][j], c2->y[i][j])) )

@@ -255,25 +255,24 @@ int FpgaDev::CalcDynamics(  int                  dev,
     return -2;
   }
 
-   std::cout << " Fpga Calc dyn n_layers -> " << n_layers  << std::endl;
-   
-   two_floats tmp; 
-   two_floats w0, w1;
-   
-   unsigned int reg_val; 
-   unsigned int i,j; 
+  std::cout << " FpgaDev::CalcDynamics: n_layers -> " << n_layers  << std::endl;
 
-   int cnt, hls_done;
    
-   int k = 0; // ddr buffer index
-   
-   two_floats * buf_in = (two_floats *)wr_buf;
-   
-   // 16 bytes for each molecule 
-         
-   
-   for (i=0; i<13; i++)
-   for (j=0; j<n_layers; j++) {
+  two_floats tmp; 
+  two_floats w0, w1;
+  
+  unsigned int reg_val; 
+  unsigned int i,j; 
+
+  int cnt, hls_done;
+  
+  int k = 0; // ddr buffer index
+  
+  two_floats * buf_in = (two_floats *)wr_buf;
+  
+  // 16 bytes for each molecule 
+  for (i=0; i<13; i++) {
+    for (j=0; j<n_layers; j++) {
       
       tmp.d0 = x[i][j];
       tmp.d1 = y[i][j];    
@@ -287,41 +286,35 @@ int FpgaDev::CalcDynamics(  int                  dev,
          tmp.d1 = type[i][j];
       }     
       buf_in[k++] = tmp; 
-   }
+    }
+  }
 
 
-   // deassert mt hls reset
-   RD_ReadDeviceReg32m(dev, CNTRL_BAR, COMMAND_REG, reg_val);
-   reg_val |= (1<<6);
-   RD_WriteDeviceReg32m(dev, CNTRL_BAR, COMMAND_REG, reg_val);
+  // deassert mt hls reset
+  RD_ReadDeviceReg32m(dev, CNTRL_BAR, COMMAND_REG, reg_val);
+  reg_val |= (1<<6);
+  RD_WriteDeviceReg32m(dev, CNTRL_BAR, COMMAND_REG, reg_val);
 
 
-      
-   //////////////////////////////////////////////////////////////////////////////
-   RD_WriteDeviceReg32m(dev, CNTRL_BAR, HLS_A, n_step);
-  /* 
-   int p2 = 0;
-   switch(n_layers) {
-      case 12: p2 = 0; break;
-      case 24: p2 = 1; break;
-      case 36: p2 = 2; break;
-      case 48: p2 = 3; break;
-      case 60: p2 = 4; break;
-      case 72: p2 = 5; break;
-      case 84: p2 = 6; break;
-      case 108: p2 = 7; break;
-      case 156: p2 = 8; break;
-      case 216: p2 = 9; break;
-      default: p2 = 2;  
-   }
-   */
-   RD_WriteDeviceReg32m(dev, CNTRL_BAR, HLS_B, n_layers);
+     
+  //////////////////////////////////////////////////////////////////////////////
+  RD_WriteDeviceReg32m(dev, CNTRL_BAR, HLS_A, n_step);
 
-   std::cout << "Fpga calc dyn: before write `to axi" << std::endl;
+  RD_WriteDeviceReg32m(dev, CNTRL_BAR, HLS_B, n_layers);
 
-   // unsigned int size_dw = (((4*n_layers*13)+32)/32); // pcie transfer size should be multiple of 128 bytes 
 
-   unsigned int size_tf = 0x80*(int)((2*n_layers*13)/(float)0x80+1);
+  // unsigned int size_dw = (((4*n_layers*13)+32)/32); // pcie transfer size should be multiple of 128 bytes 
+
+  unsigned int size_tf = 0x80*(int)(((2*n_layers*13)/(float)0x80+1));
+
+  //  std::cout << "Fpga calc dyn: SIZE_DWORD -> " << size_tf << std::endl;
+
+  // for (i=0; i<size_tf*2; i++) {
+  //   printf("%d ",wr_buf[i]);
+  // }
+  // printf("\n");
+
+
    
    // fpga_write_to_axi needs transfers size in bytes
    if (fpga_write_to_axi(dev, wr_buf, size_tf*sizeof(two_floats), 0x20000000) < 0){
@@ -339,7 +332,7 @@ int FpgaDev::CalcDynamics(  int                  dev,
    }
 
 
-   std::cout << "Fpga calc dyn: after write `to axi" << std::endl;
+   // std::cout << "Fpga calc dyn: after write `to axi" << std::endl;
    
 
    //////////////////////////////////start hls///////////////////////////////////
@@ -364,7 +357,7 @@ int FpgaDev::CalcDynamics(  int                  dev,
 
 RD_ReadDeviceReg32m(dev, CNTRL_BAR, COMMAND_REG, reg_val);
 
-printf("hls done cnt = %d, reg_val = 0x%x\n",cnt, reg_val); 
+// printf("hls done cnt = %d, reg_val = 0x%x\n",cnt, reg_val); 
    
    ///////////////////////read data from fpga ddr 
    if (fpga_read_from_axi(dev, 0x20000000, size_tf*sizeof(two_floats), rd_buf) < 0){
