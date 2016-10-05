@@ -1,5 +1,9 @@
 ﻿rc_mt_2000_12
 
+	Hls core version 0.22
+	Rand core version 0.41
+	Dynamics with holes verified
+
 	MT Core in pBlock_hls + rand core in user_ip
 	
 	changes for this revision:

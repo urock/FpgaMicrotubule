@@ -33,20 +33,20 @@ two_floats B;
 
 
 // wrapper function
-int mt_fpga(	bool flag,
-				int		n_step,				// полное количество шагов по времени
-				int 	load_coords,		//
+// int mt_fpga(	bool flag,
+				// int		n_step,				// полное количество шагов по времени
+				// int 	load_coords,		//
 
-				int seeds[],
+				// int seeds[],
 
-				float 	x_in[][N_d],
-				float 	y_in[][N_d],
-				float 	t_in[][N_d],
+				// float 	x_in[][N_d],
+				// float 	y_in[][N_d],
+				// float 	t_in[][N_d],
 
-				float 	x_out[][N_d],
-				float 	y_out[][N_d],
-				float 	t_out[][N_d]
-			);
+				// float 	x_out[][N_d],
+				// float 	y_out[][N_d],
+				// float 	t_out[][N_d]
+			// );
 
 			
 

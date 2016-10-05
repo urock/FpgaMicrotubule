@@ -1,6 +1,6 @@
 #include "mt_fpga.h"
 
-
+unsigned int N_d;
 
 // hardware function
 int mt_top(
@@ -41,25 +41,27 @@ int mt_top(
 #pragma HLS INTERFACE ap_ack port=stream4
 #pragma HLS INTERFACE ap_ack port=stream5
 
-	two_floats tmp_buf[2*N_d];
+	two_floats tmp_buf[2*N_d_max];
 
 	uint32_t 	n_step 	= p1;
 	//bit 	 	heat_on 	= p2 & 0x00000001;
 
 	int k = 0; // ddr buffer index
+	
+	N_d = p2; 
 
 
 	// fist array indice is protofiment index (horizontal index)
 	// second array indice is molecule index inside protofilament (vertical index)
 
-	bit type[13][N_d];		// for now define all molecules type as D
+	bit type[13][N_d_max];		// for now define all molecules type as D
 
 	// second indice range is > N_d not to get outside array when calculating upper logtitudal component for the highest row
 	// and right lateral component for the last three rows
 
-	float_3d m1[13][N_d+3];
+	float_3d m1[13][N_d_max+3];
 
-	float_3d m2[13][N_d+3];
+	float_3d m2[13][N_d_max+3];
 #pragma HLS data_pack variable=m1
 #pragma HLS ARRAY_PARTITION variable=m1 cyclic factor=4 dim=2
 #pragma HLS RESOURCE variable=m1 core=RAM_2P_BRAM latency=5

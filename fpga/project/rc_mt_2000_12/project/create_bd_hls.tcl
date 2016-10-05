@@ -31,7 +31,7 @@ if { [string first $scripts_vivado_version $current_vivado_version] == -1 } {
 # you can create a project using the following command:
 #    create_project project_1 myproj -part xc7v2000tfhg1761-1
 
-set mt_hls_ver 0.21
+set mt_hls_ver 0.22
 
 
 # CHANGE DESIGN NAME HERE
