@@ -1,4 +1,7 @@
-﻿Hls core version 0.22
+﻿Hls core version 0.23
+	mol type set from host
+
+Hls core version 0.22
 	N_d_max = 36 - const
 	N_d = p2 - set from host
 

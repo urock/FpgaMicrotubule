@@ -85,11 +85,11 @@ int mt_top(
 
 		loop_in_2: for (int j=0; j<N_d; j++) {
 
-			type[i][j] = 0;		// all dimer are type D for now
-
 			m1[i][j].x = tmp_buf[2*j].d0;
 			m1[i][j].y = tmp_buf[2*j].d1;
 			m1[i][j].t = tmp_buf[2*j + 1].d0;
+			
+			type[i][j] = tmp_buf[2*j + 1].d1;		// type set from host
 
 		}
 		
