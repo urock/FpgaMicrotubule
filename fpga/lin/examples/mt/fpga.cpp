@@ -303,17 +303,8 @@ int FpgaDev::CalcDynamics(  int                  dev,
   RD_WriteDeviceReg32m(dev, CNTRL_BAR, HLS_B, n_layers);
 
 
-  // unsigned int size_dw = (((4*n_layers*13)+32)/32); // pcie transfer size should be multiple of 128 bytes 
 
   unsigned int size_tf = 0x80*(int)(((2*n_layers*13)/(float)0x80+1));
-
-  //  std::cout << "Fpga calc dyn: SIZE_DWORD -> " << size_tf << std::endl;
-
-  // for (i=0; i<size_tf*2; i++) {
-  //   printf("%d ",wr_buf[i]);
-  // }
-  // printf("\n");
-
 
    
    // fpga_write_to_axi needs transfers size in bytes
@@ -331,9 +322,7 @@ int FpgaDev::CalcDynamics(  int                  dev,
       return -2;
    }
 
-
-   // std::cout << "Fpga calc dyn: after write `to axi" << std::endl;
-   
+  
 
    //////////////////////////////////start hls///////////////////////////////////
    RD_ReadDeviceReg32m(dev, CNTRL_BAR, COMMAND_REG, reg_val);

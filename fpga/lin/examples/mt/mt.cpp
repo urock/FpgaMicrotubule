@@ -403,6 +403,7 @@ namespace microtubule {
       for (i=0; i<13; i++)  {
 
         coords.x[i][j] = 0.0;
+        
         coords.t[i][j] = 0.0;
       }    
     } 
@@ -433,7 +434,15 @@ namespace microtubule {
     }    
 
 
+    for (i=0; i<13; i += 2) {
+      for (j=N_d-10; j<N_d; j++) {
+        coords.x[i][j] = 0;     
+        coords.y[i][j] = -100.0;
+        coords.t[i][j] = 0;
+      }
+    }
 
+   
     // new code
     // for (i=0; i<13; i++) {
     //    for (j=NStart[i]; j<NStop[i]; j++) { 
