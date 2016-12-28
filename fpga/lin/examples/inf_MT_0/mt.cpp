@@ -231,7 +231,7 @@ namespace microtubule {
 
     icf_name = root.get("icf", "").asString();
 
-    if (false) {
+    if (Fpga) {
 
       ocf_name = root.get("ocf_fpga", "").asString();
       olf_name = root.get("olf_fpga", "").asString();
