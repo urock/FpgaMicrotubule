@@ -1,4 +1,10 @@
-﻿Hls core version 0.23
+﻿ip_clk from clk100 from Spartan
+
+Hls core version 0.25
+	#define N_d_max 72
+	
+	
+Hls core version 0.23
 	mol type set from host
 
 Hls core version 0.22

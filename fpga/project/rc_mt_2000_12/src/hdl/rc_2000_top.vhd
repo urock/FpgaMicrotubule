@@ -556,7 +556,7 @@ signal axi_clk  : std_logic;
 signal sys_reset_c : std_logic; 
 
 
-signal clk100mhz : std_logic; 
+--signal clk100mhz : std_logic; 
 
 
 begin
@@ -565,10 +565,10 @@ user_rst <= not user_rst_n;
 
 
 
-clkin1_ibufg: IBUFG
-port map
- (O => clk100mhz,
-  I => clk100);
+--clkin1_ibufg: IBUFG
+--port map
+-- (O => clk100mhz,
+--  I => clk100);
   
 
 diffclk_ibuf : IBUFDS_GTE2
@@ -712,7 +712,7 @@ user :  user_ip
 	port map (
 	user_rst_n		=> user_rst_n,		-- active low
 	
-	clk_in			=> aclk,
+	clk_in			=> clk100, --aclk,
 	clk_out			=> ip_clk, 	
 	
 --	axi_clk         => axi_clk, 	

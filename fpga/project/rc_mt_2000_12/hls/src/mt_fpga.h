@@ -79,7 +79,7 @@ void calc_grad_update_coord(
 
 					int i2,			// i index of molecule on the left
 
-					bit pos,		// lowest monomer position in dimer: 0 - bottom, 1 - top
+//					bit pos,		// lowest monomer position in dimer: 0 - bottom, 1 - top
 
 					bit type0,		bit type1, 		bit type2,			// molecule type: 0 - 'D', 1 - 'T'
 					float_3d mc0, 	float_3d mc1, 	float_3d mc2,  		// central molecules

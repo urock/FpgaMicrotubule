@@ -9,6 +9,7 @@ typedef unsigned int uint32_t;
 //#include "hls_stream.h"
 #include <ap_int.h>
 typedef ap_uint<1> bit;
+typedef ap_uint<4> uint4_t;
 typedef unsigned long long uint37;
 typedef ap_int<32> int32;
 typedef ap_fixed<32,1> fixed;
@@ -26,7 +27,7 @@ union fpoint_uint {
 	fixed *o;
 };
 
-#define N_d_max 36
+#define N_d_max 72
 
 
 #define viscPF       (4.3e-7*2)	//(1.1e-6  )		// (kcal/mol)*(s/nm^2)
