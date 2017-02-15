@@ -1,15 +1,16 @@
 #include "mt_fpga.h"
 
-//unsigned int N_d;
+unsigned int N_d;
 
-#define N_d 24
+//#define N_d 24
+//
 
-float_3d m1[13][N_d_max+3];
-float_3d m2[13][N_d_max+3];
 
 
 void run_step(  unsigned int 		 Ndc,
-				bit type[13][N_d_max],
+				uint_type type[13],
+				float_3d m1[13][N_d_max+3],
+				float_3d m2[13][N_d_max+3],
 				volatile uint64_t	 *stream1,
 				volatile uint64_t	 *stream2,
 				volatile uint64_t	 *stream3,
@@ -18,8 +19,6 @@ void run_step(  unsigned int 		 Ndc,
 
 ) {
 
-	// monomer position in dimer: 0 - lower, 1 - upper. longitudal (vertical) force depends on that
-	bit pos = 0;
 
 	float_3d mc_n0, mc_n1, mc_n2;
 
@@ -37,7 +36,7 @@ void run_step(  unsigned int 		 Ndc,
 			int i2 = (i==12)? 0 : (i+1);
 			int j2 = (i==12)? (j+3) : j;
 
-			calc_grad_update_coord(i, j, i2, type[i][j], type[i][j+1], type[i][j+2],
+			calc_grad_update_coord(i, j, i2, type, //0,0,0,//type[i][j], type[i][j+1], type[i][j+2],
 
 							m1[i][j],   m1[i][j+1],   m1[i][j+2],			// central molecules
 							m1[i2][j2], m1[i2][j2+1], m1[i2][j2+2],			// left molecules
@@ -59,47 +58,40 @@ void run_step(  unsigned int 		 Ndc,
 
 }
 
-	////		pos = 0;
-	//
-	//		// reverse order
-	//
-	//		l12: for (int j=0; j<N_d; j+=3){
-	//#pragma HLS LOOP_TRIPCOUNT min=12 max=12 avg=12
-	//
-	//			l22: for (int i=0; i<13; i++) {
-	//	#pragma HLS PIPELINE
-	//
-	//				// (i,j) - current molecule
-	//				// (i2, j2) - left neighbor of current molecule
-	//				// each row is spiral (going up and left). last molecule in row is above first molecule in row by 3 rows
-	//				// so that last mol in (12,0) will have as left neighbor (0,3) mol; (12,1) - (0,4) and so on
-	//				int i2 = (i==12)? 0 : (i+1);
-	//				int j2 = (i==12)? (j+3) : j;
-	//
-	//				calc_grad_update_coord(i, j, i2, pos, 0, 0, 0,
-	//
-	//								m2[i][j],   m2[i][j+1],   m2[i][j+2],			// central molecules
-	//								m2[i2][j2], m2[i2][j2+1], m2[i2][j2+2],			// left molecules
-	//								m2[i][j+3],										// upper molecule
-	//
-	//								&mc_n0, &mc_n1, &mc_n2,				// new coords of central molecules
-	//								stream1, stream2, stream3, stream4, stream5
-	//
-	//				);
-	//
-	//
-	//				// store new coords of current mol
-	//				if (j==0) { m1[i][j+1] = mc_n1; m1[i][j+2] = mc_n2; }
-	//				else { m1[i][j] = mc_n0; m1[i][j+1] = mc_n1; m1[i][j+2] = mc_n2;  }
-	//
-	//			}
-	//
-	//			pos = (pos==0)? 1 : 0;
-	//
-	//			if (j == (p2-1))
-	//				break;
-	//
-	//		}
+			// reverse order
+
+			l12: for (int j=0; j<Ndc; j+=3){
+	#pragma HLS LOOP_TRIPCOUNT min=12 max=12 avg=12
+
+				l22: for (int i=0; i<13; i++) {
+		#pragma HLS PIPELINE
+#pragma HLS LOOP_FLATTEN
+					// (i,j) - current molecule
+					// (i2, j2) - left neighbor of current molecule
+					// each row is spiral (going up and left). last molecule in row is above first molecule in row by 3 rows
+					// so that last mol in (12,0) will have as left neighbor (0,3) mol; (12,1) - (0,4) and so on
+					int i2 = (i==12)? 0 : (i+1);
+					int j2 = (i==12)? (j+3) : j;
+
+					calc_grad_update_coord(i, j, i2, type, //0,0,0,//type[i][j], type[i][j+1], type[i][j+2],
+
+									m2[i][j],   m2[i][j+1],   m2[i][j+2],			// central molecules
+									m2[i2][j2], m2[i2][j2+1], m2[i2][j2+2],			// left molecules
+									m2[i][j+3],										// upper molecule
+
+									&mc_n0, &mc_n1, &mc_n2,				// new coords of central molecules
+									stream1, stream2, stream3, stream4, stream5
+
+					);
+
+
+					// store new coords of current mol
+					if (j==0) { m1[i][j+1] = mc_n1; m1[i][j+2] = mc_n2; }
+					else { m1[i][j] = mc_n0; m1[i][j+1] = mc_n1; m1[i][j+2] = mc_n2;  }
+
+				}
+
+			}
 
 }
 
@@ -146,11 +138,10 @@ int mt_top(
 	two_floats tmp_buf[2*N_d_max];
 
 	uint32_t 	n_step 	= p1;
-	//bit 	 	heat_on 	= p2 & 0x00000001;
 
 	int k = 0; // ddr buffer index
 	
-//	N_d = p2;
+	N_d = p2;
 
 
 	// fist array indice is protofiment index (horizontal index)
@@ -159,9 +150,9 @@ int mt_top(
 	// second indice range is > N_d not to get outside array when calculating upper logtitudal component for the highest row
 	// and right lateral component for the last three rows
 
-//	float_3d m1[13][N_d_max+3];
-//
-//	float_3d m2[13][N_d_max+3];
+	float_3d m1[13][N_d_max+3];
+
+	float_3d m2[13][N_d_max+3];
 #pragma HLS data_pack variable=m1
 #pragma HLS ARRAY_PARTITION variable=m1 cyclic factor=4 dim=2
 #pragma HLS RESOURCE variable=m1 core=RAM_2P_BRAM latency=5
@@ -170,17 +161,10 @@ int mt_top(
 #pragma HLS ARRAY_PARTITION variable=m2 cyclic factor=4 dim=2
 #pragma HLS RESOURCE variable=m2 core=RAM_2P_BRAM latency=5
 
-	bit type[13][N_d_max];		// for now define all molecules type as D
 
-#pragma HLS ARRAY_RESHAPE variable=type cyclic factor=3 dim=2
-#pragma HLS RESOURCE variable=type core=RAM_2P_BRAM latency=5
+	uint_type type[13];
+#pragma HLS ARRAY_PARTITION variable=type complete
 
-//	float_3d mc_n0, mc_n1, mc_n2;
-
-
-
-//	// monomer position in dimer: 0 - lower, 1 - upper. longitudal (vertical) force depends on that
-//	bit pos = 0;
 
 	loop_in_1: for (int i=0; i<13; i++) {
 
@@ -193,7 +177,11 @@ int mt_top(
 			m1[i][j].y = tmp_buf[2*j].d1;
 			m1[i][j].t = tmp_buf[2*j + 1].d0;
 			
-			type[i][j] = tmp_buf[2*j + 1].d1;		// type set from host
+//			type[i][j] = (tmp_buf[2*j + 1].d1);		// type set from host
+			if (tmp_buf[2*j + 1].d1 == 1.0)
+				type[i][j] = 1;
+			else
+				type[i][j] = 0;
 
 		}
 		
@@ -203,11 +191,12 @@ int mt_top(
 		
 	}
 
+	float_3d mc_n0, mc_n1, mc_n2;
 
 	// time loop
-	time_loop: for (int step=1; step <= (p1>>1); step++) {
+	time_loop: for (int step=1; step <= (n_step>>1); step++) {
 
-		run_step(p2, type, stream1, stream2, stream3, stream4, stream5);
+		run_step(p2, type, m1, m2, stream1, stream2, stream3, stream4, stream5);
 
 	}
 
@@ -266,8 +255,8 @@ void calc_grad_update_coord(
 					int i2,			// i index of molecule on the left
 
 //					bit pos,		// lowest monomer position in dimer: 0 - bottom, 1 - top
-
-					bit type0,		bit type1, 		bit type2,			// molecule type: 0 - 'D', 1 - 'T'
+					uint_type type[13],
+//					bit type0,		bit type1, 		bit type2,			// molecule type: 0 - 'D', 1 - 'T'
 					float_3d mc0, 	float_3d mc1, 	float_3d mc2,  		// central molecules
 
 					float_3d ml0, float_3d ml1, float_3d ml2,		// left molecules
@@ -307,6 +296,10 @@ void calc_grad_update_coord(
 
 
 	bit pos2 = (pos==0)? 1 : 0;
+
+	bit type0 = type[i1][j1];
+	bit type1 = type[i1][j1+1];
+	bit type2 = type[i1][j1+2];
 
 
 	// this function will calculate left and up force components of current molecule

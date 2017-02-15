@@ -15,6 +15,7 @@ typedef ap_int<32> int32;
 typedef ap_fixed<32,1> fixed;
 
 
+
 #else
 typedef char bit;
 typedef unsigned long long uint37;
@@ -28,6 +29,7 @@ union fpoint_uint {
 };
 
 #define N_d_max 72
+typedef ap_uint<N_d_max> uint_type;
 
 
 #define viscPF       (4.3e-7*2)	//(1.1e-6  )		// (kcal/mol)*(s/nm^2)
