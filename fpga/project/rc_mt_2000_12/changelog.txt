@@ -1,6 +1,6 @@
 ﻿rc_mt_2000_12
-
-	Hls core version 0.25
+type = const =0
+	Hls core version 0.26
 	Rand core version 0.41
 	Dynamics with holes verified
 

@@ -1,4 +1,7 @@
-﻿ip_clk from clk100 from Spartan
+﻿Hls core version 0.26
+ hls model nd set from host synth ok, pipeline ok, TODO check in tb and in hardwarw
+
+ip_clk from clk100 from Spartan
 
 Hls core version 0.25
 	#define N_d_max 72

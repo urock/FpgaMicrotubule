@@ -297,11 +297,13 @@ void calc_grad_update_coord(
 
 	bit pos2 = (pos==0)? 1 : 0;
 
-	bit type0 = type[i1][j1];
-	bit type1 = type[i1][j1+1];
-	bit type2 = type[i1][j1+2];
+//	bit type0 = type[i1][j1];
+//	bit type1 = type[i1][j1+1];
+//	bit type2 = type[i1][j1+2];
 
-
+	bit type0 = 0;
+	bit type1 = 0;
+	bit type2 = 0;
 	// this function will calculate left and up force components of current molecule
 	// right force component as loaded on previous call of this function
 	
