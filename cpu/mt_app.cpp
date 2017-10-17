@@ -33,7 +33,7 @@ float t_11[13][N_d];
 // во время дебага TOTAL_STEPS можно делать меньше
 #define STEPS_TO_WRITE		100000			// через это значение шагов сравниваем координаты и выводим в файл
 
-#define N				2			// количчество  запусков функций mt_cpu и mt_fpga
+#define N				20			// количчество  запусков функций mt_cpu и mt_fpga
 
 #define TOTAL_STEPS			(STEPS_TO_WRITE*N)		// полное количество шагов по времени
 

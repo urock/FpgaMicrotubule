@@ -13,7 +13,7 @@ typedef ap_uint<1> bit;
 typedef char bit;
 #endif
 
-#define N_threads 32
+#define N_threads 4
 
 #define N_d 12
 

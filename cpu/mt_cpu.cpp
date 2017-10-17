@@ -338,18 +338,27 @@ void mt_cpu(   int      n_step,
                f_y = lat_l_y[i][j] + lat_r_y[i][j] + long_u_y[i][j] + temp2;
                f_t = lat_l_t[i][j] + lat_r_t[i][j] + long_u_t[i][j] + long_d_t[i][j];
 
+               // printf("f_x = %d\n", f_x);
+
+               float x_debugg;
+               if (i == 5 && j == 5) x_debugg = x[i][j];
 
                x[i][j] -= dt_viscPF * f_x          +  sqrt_PF_xy*rand_buf[0];///rand1*sqrt_PF_xy;
                y[i][j] -= dt_viscPF * f_y          + sqrt_PF_xy*rand_buf[1];///rand2*sqrt_PF_xy;
                t[i][j] -= dt_viscPF_teta * f_t  + sqrt_PF_teta*rand_buf[2];///rand3*sqrt_PF_teta;
 
+               if (i == 5 && j == 5){
+                  if (x_in[i][j] == x[i][j]) printf("wololo\n");
+               }
             }
          }
-
       } // n_step
 
 
    }
+
+   // printf("dt_viscPF = %d\n", dt_viscPF);
+   // printf("sqrt_PF_xy = %d\n", sqrt_PF_xy);
 
    t2=omp_get_wtime();
    delta_t = t2 - t1;
@@ -363,6 +372,7 @@ void mt_cpu(   int      n_step,
          t_out[i][j] =  t[i][j];
       }
 
+   if (x[5][5] == x_in[5][5]) printf("WOLOLO\n");
 
 }
 
@@ -575,24 +585,22 @@ inline  void calc_grad_c(     int i1,     // i index правой молекулы
       *grad_long_y_1       = 0.0f;
       *grad_long_teta_1 = 0.0f;
 
-      //*grad_long_x_3     = 0.0f;
-      //*grad_long_y_3     = 0.0f;
+      *grad_long_x_3     = 0.0f;
+      *grad_long_y_3     = 0.0f;
       *grad_long_teta_3 = 0.0f;
 
    } else {
 
-      *grad_long_x_1       = Grad_tmp_x;
-      *grad_long_y_1       = Grad_tmp_y;
+      // *grad_long_x_1       = Grad_tmp_x;
+      // *grad_long_y_1       = Grad_tmp_y;
       *grad_long_teta_1 = GradU_C_teta_1 + GradU_B_teta_1;
 
-      //*grad_long_x_3     = - Grad_tmp_x;
-      //*grad_long_y_3     = - Grad_tmp_y;
+      // *grad_long_x_3     = - Grad_tmp_x;
+      // *grad_long_y_3     = - Grad_tmp_y;
       *grad_long_teta_3 = GradU_C_teta_3 + GradU_B_teta_3;
 
 
    }
-
-
 }
 
 
