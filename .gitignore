@@ -3,4 +3,4 @@
 *.txt
 vizualisation/experiments/
 cpu/mt_app
-vizualisation/__pycache__
+vizualisation/__pycache__/
