@@ -187,9 +187,7 @@ void mt_cpu(   int      n_step,
                int      seeds[],
                bool     ompflag
 
-         )
-
-{
+         ) {
 
    bit type[13][N_d];
 
@@ -206,51 +204,13 @@ void mt_cpu(   int      n_step,
    float long_u_y [13][N_d];
    float long_u_t [13][N_d];
    float long_d_t [13][N_d];
-
-   // float ** x = new float * [13];
-   // float ** y = new float * [13];
-   // float ** t = new float *[13];
-   // float ** lat_l_x = new float *[13];
-   // float ** lat_l_y = new float * [13];
-   // float ** lat_l_t = new float * [13];
-   // float ** lat_r_x = new float * [13];
-   // float ** lat_r_y = new float * [13];
-   // float ** lat_r_t = new float * [13];
-   // float ** long_u_x = new float * [13];
-   // float ** long_u_y = new float * [13];
-   // float ** long_u_t = new float * [13];
-   // float ** long_d_t = new float * [13];
-
-
-
-
-   // for (int i =0; i < 13; i++) {
-   //    x[i] = new  float [N_d+3];
-   //    y[i] = new  float [N_d+3];
-   //    t[i] = new  float [N_d+3];
-   //    lat_l_x[i] = new  float [N_d+3];
-   //    lat_l_y[i] = new  float [N_d+3];
-   //    lat_l_t[i] = new  float [N_d+3];
-   //    lat_r_x[i] = new  float [N_d+3];
-   //    lat_r_y[i] = new  float [N_d+3];
-   //    lat_r_t[i] = new  float [N_d+3];
-   //    long_u_x[i] = new  float [N_d+3];
-   //    long_u_y[i] = new  float [N_d+3];
-   //    long_u_t[i] = new  float [N_d+3];
-   //    long_d_t[i] = new  float [N_d+3];
-   // }
-
-
    int i,j;
 
 
-
    if ((flag_seed_c == 1)) {
-
       for (int jj=0; jj<4*N_threads; jj++)
          ar_uni[jj].init_genrand(seeds[jj]);
    }
-
 
 
    if (load_coords) {
@@ -265,13 +225,10 @@ void mt_cpu(   int      n_step,
    }
 
 
-
-
    double t1= 0, t2 = 0, delta_t = 0;
    t1=omp_get_wtime();
    float f_x=0, f_y=0, f_t=0;
    int thr_num = 0;
-
 
 
    omp_set_nested(1);
@@ -280,8 +237,6 @@ void mt_cpu(   int      n_step,
 
    #pragma omp parallel private(x, y, t, lat_l_x, lat_l_y, lat_l_t, lat_r_x, lat_r_y, lat_r_t, long_u_x, long_u_y, long_u_t, long_d_t)  num_threads(N_threads) if (ompflag)//for  schedule(static, 3) //default(none) firstprivate() shared() shared (x, lat_l_x, lat_l_y, lat_l_t, lat_r_x, lat_r_y, lat_r_t, long_u_x, long_u_y, long_u_t, long_d_x, long_d_y, long_d_t)
    {
-
-
       //////****Main parallel cycle********///////
       for (int step=1; step <= n_step; step++) {
 
@@ -296,8 +251,6 @@ void mt_cpu(   int      n_step,
                bit pos = j%2;
                int i2 = (i==12)? 0 : (i+1);
                int j2 = (i==12)? (j+3) : j;
-
-
 
                calc_grad_c(i, j, i2, type[i][j],  pos,
 
@@ -327,9 +280,8 @@ void mt_cpu(   int      n_step,
 
                float rand_buf[4];
 
-               if (get_norm_vals(0, &rand_buf[0], &rand_buf[1])!=0) {printf("NaN error!!!!\n"); }
-               if (get_norm_vals(1, &rand_buf[2], &rand_buf[3])!=0) {printf("NaN error!!!!\n"); }
-
+               if (get_norm_vals(0, &rand_buf[0], &rand_buf[1])!=0) printf("NaN error!!!!\n");
+               if (get_norm_vals(1, &rand_buf[2], &rand_buf[3])!=0) printf("NaN error!!!!\n");
 
                float temp1 = - long_u_x[i][j-1];
                float temp2 = - long_u_y[i][j-1];
@@ -354,7 +306,6 @@ void mt_cpu(   int      n_step,
          }
       } // n_step
 
-
    }
 
    // printf("dt_viscPF = %d\n", dt_viscPF);
@@ -375,11 +326,6 @@ void mt_cpu(   int      n_step,
    if (x[5][5] == x_in[5][5]) printf("WOLOLO\n");
 
 }
-
-
-
-
-
 
 
 
@@ -419,20 +365,13 @@ inline  void calc_grad_c(     int i1,     // i index правой молекулы
                float *grad_long_y_3,
                float *grad_long_teta_3
 
-                     )
-
-
-{
-
-
-
+                     ) {
    // теперь PE_left - это индекс i2, а PF_right - индекс i1
 
    float cos_t_A = cosf(teta_2);
    float sin_t_A = sinf(teta_2);
    float cos_t_B = cosf(teta_1);
    float sin_t_B = sinf(teta_1);
-
 
    float cos_t_1 = cos_t_B;
    float sin_t_1 = sin_t_B;
@@ -464,9 +403,7 @@ inline  void calc_grad_c(     int i1,     // i index правой молекулы
    float Dy = Ay_left - By_right;
    float Dz = Az_left - Bz_right;
 
-
    float dist = sqrtf(( pow(Dx, 2) + pow(Dy, 2) + pow(Dz, 2) ));
-
 
    if (dist <=1e-7 ){
       dist = 1e-5;
@@ -498,10 +435,8 @@ inline  void calc_grad_c(     int i1,     // i index правой молекулы
    float drdy_B = drdBz;
    float drdteta_B = drdBx*dB_X_dteta + drdBy*dB_Y_dteta + drdBz*dB_Z_dteta;
 
-
    float Grad_U_tmp = (b_lat* dist *expf(-dist*inv_ro0)*(2.0f - dist*inv_ro0) +
             dist* clat_dlat_ro0 * expf( - (dist*dist) * d_lat_ro0 )  ) * A_Koeff;
-
 
 
    if ((i1==12)&&(j1>=(N_d-3))) {
@@ -525,7 +460,6 @@ inline  void calc_grad_c(     int i1,     // i index правой молекулы
       *grad_lat_teta_1 = Grad_U_tmp * drdteta_B;
 
    }
-
 
 
    // [nd]  -  mol3
@@ -559,7 +493,6 @@ inline  void calc_grad_c(     int i1,     // i index правой молекулы
       else        // dimer type 'T'
          dUdr_C = (tmp1*b_long_T + tmp2) * A_long_T;
    }
-
 
 
    float Grad_tmp_x = drdx_long * dUdr_C;
@@ -602,10 +535,3 @@ inline  void calc_grad_c(     int i1,     // i index правой молекулы
 
    }
 }
-
-
-
-
-
-
-
