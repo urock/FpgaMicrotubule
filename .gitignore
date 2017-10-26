@@ -1,0 +1,6 @@
+*.o
+*~
+*.txt
+vizualisation/experiments/
+cpu/mt_app
+vizualisation/__pycache__/
