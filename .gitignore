@@ -3,3 +3,4 @@
 results/
 visualisation/__pycache__/
 *.[oa]
+*.pyc
